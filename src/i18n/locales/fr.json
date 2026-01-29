@@ -1,0 +1,91 @@
+{
+  "common": {
+    "skip": "PASSER",
+    "next": "SUIVANT",
+    "complete_profile": "Complétez votre profil",
+    "language": "Langue",
+    "english": "Anglais",
+    "french": "Français",
+    "sign_up": "S'inscrire",
+    "sign_in": "Se connecter"
+  },
+  "welcome": {
+    "title": "Bienvenue Fit & Meet",
+    "subtitle": "Trouvons votre partenaire parfait",
+    "terms_text": "En continuant, vous acceptez les",
+    "terms_link": "Termes et Conditions"
+  },
+  "auth": {
+    "signin": {
+      "title": "Bon retour !",
+      "subtitle": "Connectez-vous pour continuer",
+      "phone_placeholder": "Numéro de téléphone ({length} chiffres)",
+      "signin_button": "Se connecter",
+      "signup_link": "Vous n'avez pas de compte ?",
+      "signup_link_bold": "S'inscrire"
+    },
+    "signup": {
+      "title": "Créer un compte",
+      "subtitle": "Inscrivez-vous pour commencer",
+      "phone_placeholder": "Numéro de téléphone ({length} chiffres)",
+      "signup_button": "S'inscrire",
+      "signin_link": "Vous avez déjà un compte ?",
+      "signin_link_bold": "Se connecter",
+      "continue_email": "Continuer avec un autre email",
+      "or": "Ou"
+    },
+    "otp": {
+      "title": "Vérification OTP",
+      "subtitle": "Nous avons envoyé un OTP à votre numéro de mobile",
+      "resend_text": "Renvoyer l'OTP dans",
+      "otp_sent": "OTP envoyé",
+      "otp_sent_message": "Utilisez 0000 comme OTP pour les tests",
+      "invalid_otp": "OTP invalide",
+      "invalid_otp_message": "Veuillez saisir le bon OTP (0000)",
+      "profile_incomplete": "Profil incomplet",
+      "error": "Erreur",
+      "failed_send_otp": "Échec de l'envoi de l'OTP. Veuillez réessayer.",
+      "failed_verify_otp": "Échec de la vérification de l'OTP. Veuillez réessayer.",
+      "invalid_phone": "Téléphone invalide",
+      "invalid_phone_message": "Veuillez saisir un numéro de téléphone valide à {length} chiffres"
+    }
+  },
+  "terms": {
+    "title": "Termes et Conditions",
+    "section1_title": "1. Acceptation des Conditions",
+    "section1_content": "En accédant et en utilisant cette application de rencontres, vous acceptez et convenez d'être lié par les termes et dispositions de cet accord.",
+    "section2_title": "2. Éligibilité de l'Utilisateur",
+    "section2_content": "Vous devez avoir au moins 18 ans pour utiliser ce service. En utilisant cette application, vous déclarez et garantissez que vous avez le droit, l'autorité et la capacité de conclure cet accord.",
+    "section3_title": "3. Compte Utilisateur",
+    "section3_content": "Vous êtes responsable du maintien de la confidentialité de votre compte et mot de passe. Vous acceptez d'assumer la responsabilité de toutes les activités qui se produisent sous votre compte.",
+    "section4_title": "4. Conduite de l'Utilisateur",
+    "section4_content": "Vous acceptez de ne pas utiliser le service pour télécharger, publier ou transmettre tout contenu illégal, nuisible, menaçant, abusif, harcelant, diffamatoire, vulgaire, obscène ou autrement répréhensible.",
+    "section5_title": "5. Politique de Confidentialité",
+    "section5_content": "Votre vie privée est importante pour nous. Nous collectons et utilisons vos informations personnelles conformément à notre Politique de Confidentialité. En utilisant cette application, vous consentez à notre collecte et utilisation de vos informations.",
+    "section6_title": "6. Propriété du Contenu",
+    "section6_content": "Vous conservez la propriété de tout contenu que vous soumettez, publiez ou affichez sur ou via le service. En soumettant du contenu, vous nous accordez une licence mondiale et non exclusive d'utiliser, copier et afficher ce contenu.",
+    "section7_title": "7. Activités Interdites",
+    "section7_content": "Vous ne pouvez pas utiliser le service à des fins illégales ou non autorisées. Vous ne devez pas transmettre de vers, virus ou tout code de nature destructrice.",
+    "section8_title": "8. Résiliation",
+    "section8_content": "Nous nous réservons le droit de résilier ou suspendre votre compte à tout moment sans préavis ni responsabilité pour quelque raison que ce soit, y compris la violation de ces Conditions.",
+    "section9_title": "9. Avertissement",
+    "section9_content": "Le service est fourni \"tel quel\" sans garanties d'aucune sorte. Nous ne garantissons pas que le service sera ininterrompu, sécurisé ou sans erreur.",
+    "section10_title": "10. Modifications des Conditions",
+    "section10_content": "Nous nous réservons le droit de modifier ces conditions à tout moment. Votre utilisation continue du service après de telles modifications constitue votre acceptation des nouvelles Conditions.",
+    "last_updated": "Dernière mise à jour : 15 janvier 2026"
+  },
+  "onboarding": {
+    "screen1": {
+      "title": "Restez connecté",
+      "description": "Commencez une conversation avec vos partenaires, découvrez les nouvelles de votre salle pour rester connecté."
+    },
+    "screen2": {
+      "title": "Le match de votre vie ?",
+      "description": "Grâce à nos recommandations, trouvez votre partenaire sportif ou plus si vous cliquez.."
+    },
+    "screen3": {
+      "title": "Montrez votre meilleur profil",
+      "description": "Complétez votre profil pour donner le plus d'informations possible aux autres membres de votre salle de sport"
+    }
+  }
+}

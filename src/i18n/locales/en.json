@@ -1,0 +1,91 @@
+{
+  "common": {
+    "skip": "SKIP",
+    "next": "NEXT",
+    "complete_profile": "Complete your Profile",
+    "language": "Language",
+    "english": "English",
+    "french": "French",
+    "sign_up": "Sign up",
+    "sign_in": "Sign in"
+  },
+  "welcome": {
+    "title": "Welcome Fit & Meet",
+    "subtitle": "Let's Find Your Perfect Fit Match",
+    "terms_text": "By continuing you accept the",
+    "terms_link": "Term & Conditions"
+  },
+  "auth": {
+    "signin": {
+      "title": "Welcome Back!",
+      "subtitle": "Sign in to continue",
+      "phone_placeholder": "Phone Number ({length} digits)",
+      "signin_button": "Sign In",
+      "signup_link": "Don't have an account?",
+      "signup_link_bold": "Sign Up"
+    },
+    "signup": {
+      "title": "Create Account",
+      "subtitle": "Sign up to get started",
+      "phone_placeholder": "Phone Number ({length} digits)",
+      "signup_button": "Sign Up",
+      "signin_link": "Already have an account?",
+      "signin_link_bold": "Sign In",
+      "continue_email": "Continue with other email",
+      "or": "Or"
+    },
+    "otp": {
+      "title": "OTP verification",
+      "subtitle": "We have sent an OTP to your mobile number",
+      "resend_text": "Resend OTP in",
+      "otp_sent": "OTP Sent",
+      "otp_sent_message": "Use 0000 as OTP for testing",
+      "invalid_otp": "Invalid OTP",
+      "invalid_otp_message": "Please enter correct OTP (0000)",
+      "profile_incomplete": "Profile Incomplete",
+      "error": "Error",
+      "failed_send_otp": "Failed to send OTP. Please try again.",
+      "failed_verify_otp": "Failed to verify OTP. Please try again.",
+      "invalid_phone": "Invalid Phone",
+      "invalid_phone_message": "Please enter a valid {length}-digit phone number"
+    }
+  },
+  "terms": {
+    "title": "Terms & Conditions",
+    "section1_title": "1. Acceptance of Terms",
+    "section1_content": "By accessing and using this dating application, you accept and agree to be bound by the terms and provision of this agreement.",
+    "section2_title": "2. User Eligibility",
+    "section2_content": "You must be at least 18 years old to use this service. By using this app, you represent and warrant that you have the right, authority, and capacity to enter into this agreement.",
+    "section3_title": "3. User Account",
+    "section3_content": "You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account.",
+    "section4_title": "4. User Conduct",
+    "section4_content": "You agree not to use the service to upload, post, or transmit any content that is unlawful, harmful, threatening, abusive, harassing, defamatory, vulgar, obscene, or otherwise objectionable.",
+    "section5_title": "5. Privacy Policy",
+    "section5_content": "Your privacy is important to us. We collect and use your personal information in accordance with our Privacy Policy. By using this app, you consent to our collection and use of your information.",
+    "section6_title": "6. Content Ownership",
+    "section6_content": "You retain ownership of all content you submit, post, or display on or through the service. By submitting content, you grant us a worldwide, non-exclusive license to use, copy, and display such content.",
+    "section7_title": "7. Prohibited Activities",
+    "section7_content": "You may not use the service for any illegal or unauthorized purpose. You must not transmit any worms, viruses, or any code of a destructive nature.",
+    "section8_title": "8. Termination",
+    "section8_content": "We reserve the right to terminate or suspend your account at any time without prior notice or liability for any reason, including breach of these Terms.",
+    "section9_title": "9. Disclaimer",
+    "section9_content": "The service is provided \"as is\" without warranties of any kind. We do not warrant that the service will be uninterrupted, secure, or error-free.",
+    "section10_title": "10. Changes to Terms",
+    "section10_content": "We reserve the right to modify these terms at any time. Your continued use of the service after any such changes constitutes your acceptance of the new Terms.",
+    "last_updated": "Last Updated: January 15, 2026"
+  },
+  "onboarding": {
+    "screen1": {
+      "title": "Stay connected",
+      "description": "Start a Conversation with your partners, discover the news from your room to stay connected."
+    },
+    "screen2": {
+      "title": "The match of your life?",
+      "description": "Thanks to our recommendations, find your sports partner or more if you click.."
+    },
+    "screen3": {
+      "title": "Show your best profile",
+      "description": "Complete your profile to give as much information as possible to the other members of your gym"
+    }
+  }
+}

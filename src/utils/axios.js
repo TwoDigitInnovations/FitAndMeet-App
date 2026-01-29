@@ -14,11 +14,11 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.response.use(
     function (response) {
-        console.log(response.config.url + ': axios-response', response);
-        if (response.data?.status) {
+        console.log(response.config.url + ': axios-response', response.data);
+        if (response.data?.success) {
             return response.data;
         } else {
-            const message = response.data?.message;
+            const message = response.data?.message || 'Request failed';
             return Promise.reject(message);
         }
     },

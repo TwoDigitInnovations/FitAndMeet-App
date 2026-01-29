@@ -1,188 +1,302 @@
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Easing, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Constants, { FONTS } from '../utils/Constant';
-import Home from '../screens/app/Home'
-import Reports from '../screens/app/Report'
-import Settings from '../screens/app/Settings'
-import { HomeIcon, SettingIcon, ReportIcon } from '../Assets/theme'
-
-
-
-
+import React, {useEffect, useRef} from 'react';
+import {
+  Animated,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ImageBackground,
+} from 'react-native';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import Home from '../screens/app/Home';
+import Discover from '../screens/app/Discover';
+import Settings from '../screens/app/Settings';
+import ChatList from '../screens/app/ChatList';
+import {Home as HomeIcon, Heart, MessageCircle, User} from 'lucide-react-native';
 
 const Tab = createBottomTabNavigator();
+const {width, height} = Dimensions.get('window');
 
-export const TabNav = () => {
-  const tabOffsetValue = useRef(new Animated.Value(0)).current;
-  function getWidth() {
-    let width = Dimensions.get("window").width
-    // Total five Tabs...
-    return width / 3
-  }
+const CustomTabBar = ({state, descriptors, navigation}) => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
 
-  const TabArr = [
-    {
-      iconActive: <HomeIcon color={Constants.black} height={24} width={24} />,
-      iconInActive: <HomeIcon color={Constants.white} height={22} width={22} />,
-      component: Home,
-      routeName: 'Home',
-    },
-    {
-      iconActive: <ReportIcon color={Constants.black} height={24} width={24} />,
-      iconInActive: <ReportIcon color={Constants.white} height={22} width={22} />,
-      component: Reports,
-      routeName: 'Reports',
-    },
-    {
-      iconActive: <SettingIcon color={Constants.black} height={24} width={24} />,
-      iconInActive: <SettingIcon color={Constants.white} height={22} width={22} />,
-      component: Settings,
-      routeName: 'Settings',
-    },
-    // {
-    //   iconActive: <StatisticsIcon color={Constants.white} height={20} width={20} />,
-    //   iconInActive: <StatisticsIcon color={Constants.custom_blue} height={20} width={20} />,
-    //   component: Account,
-    //   routeName: 'Account',
-    // },
+  const tabs = [
+    {icon: HomeIcon, label: 'Home'},
+    {icon: Heart, label: 'Like'},
+    {icon: MessageCircle, label: 'Chat'},
+    {icon: User, label: 'Profile'},
   ];
 
-  const TabButton = useCallback(
-    (props) => {
-      const isSelected = props?.['aria-selected'];
-      const onPress = props?.onPress;
-      const onclick = props?.onclick;
-      const item = props?.item;
-      const index = props?.index;
-      useEffect(() => {
+  useEffect(() => {
+    Animated.spring(animatedValue, {
+      toValue: state.index,
+      useNativeDriver: true,
+      tension: 50,
+      friction: 8,
+    }).start();
+  }, [state.index]);
 
-        {
-          isSelected &&
-            Animated.spring(tabOffsetValue, {
-              toValue: getWidth() * index,
-              useNativeDriver: true
-            }).start();
-        }
-
-      }, [isSelected])
-
-      const scaleAnim = useRef(new Animated.Value(1)).current;
-      useEffect(() => {
-        Animated.spring(scaleAnim, {
-          toValue: isSelected ? 1.3 : 1, // scale up when selected, back when unselected
-          useNativeDriver: true,
-        }).start();
-      }, [isSelected]);
-
-      return (
-        <View style={styles.tabBtnView}>
-          {index === 0 && <Animated.View style={{
-            // width: getWidth() -15,
-            height: 40,
-            width: 40,
-            backgroundColor: Constants.white,
-            position: 'absolute',
-            top: -12,
-            borderRadius: 30,
-            transform: [
-              { translateX: tabOffsetValue }
-            ]
-          }}>
-          </Animated.View>}
-
-          <TouchableOpacity
-            onPress={onclick ? onclick : onPress}
-            style={[
-              styles.tabBtn,
-              // {backgroundColor:isSelected?Constants.custom_green:null}
-            ]}>
-            <Animated.View style={{
-              transform: [{ scale: scaleAnim }],
-              // height: 48,
-              // width: 48,
-              // marginTop: 15
-            }}>
-              {isSelected ? item.iconActive : item.iconInActive}
-            </Animated.View>
-
-          </TouchableOpacity>
-          <Text style={{ color: Constants.white, }}>{item.routeName}</Text>
-          {/* <Text style={[styles.tabtxt,{color:isSelected?Constants.custom_green:Constants.tabgrey}]} onPress={onclick ? onclick : onPress}>{item.name}</Text> */}
-        </View>
-      );
-    },
-    [],
-  );
+  const tabWidth = width / 4;
 
   return (
+<ImageBackground
+  key={state.index}
+  source={
+    state.index === 1 ? require('../Assets/images/like.png') :
+    state.index === 2 ? require('../Assets/images/chat.png') :
+    state.index === 3 ? require('../Assets/images/profile.png') :
+    require('../Assets/images/home1.png')
+  }
+  style={[
+    styles.tabBar, 
+    {
+      bottom: height * 0.015, 
+      marginLeft: state.index === 0 || state.index === 1 ? width * 0.01 : 
+                  state.index === 2 ? width * 0.015 :  
+                  state.index === 3 ? width * 0.015 : 0,  
+    }
+  ]}
+  resizeMode={state.index === 1 ? "contain" : "contain"} 
+  imageStyle={{height: '100%'}}>
+      
+      <Animated.View
+        style={[
+          styles.slider,
+          {
+            transform: [
+              {
+                translateX: animatedValue.interpolate({
+                  inputRange: [0, 1, 2, 3],
+                  outputRange: [
+                    15 + width * 0.01,  
+                    tabWidth + 15 - 20, 
+                    tabWidth * 2 + 15 - 45, 
+                    tabWidth * 3 + 15 - 55
+                  ],
+                }),
+              },
+              {
+                translateY: animatedValue.interpolate({
+                  inputRange: [0, 1, 2, 3],
+                  outputRange: [
+                    -height * 0.008,  
+                    0,  
+                    0,  
+                    0   
+                  ],
+                }),
+              },
+            ],
+          },
+        ]}
+      />
 
-    <Tab.Navigator
-      screenOptions={{
-        tabBarShowLabel: false,
-        headerShown: false,
-        tabBarHideOnKeyboard: true,
-        tabBarStyle: {
-          position: 'absolute',
-          width: '100%',
-          height: 80,
-          backgroundColor: Constants.black,
-          // boxShadow: '0px 0px 3px 0.2px grey',
-          borderTopLeftRadius: 15,
-          borderTopRightRadius: 15,
-          borderWidth: 1,
-          borderBottomWidth: 0,
-          borderColor: Constants.custom_blue
-        },
-      }}>
-      {TabArr.map((item, index) => {
+    
+      {state.routes.map((route, index) => {
+        const isFocused = state.index === index;
+        const Icon = tabs[index].icon;
+        const label = tabs[index].label;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
         return (
-          <Tab.Screen
-            key={index}
-            name={item.routeName}
-            component={item.component}
+          <TouchableOpacity
+            key={route.key}
+            onPress={onPress}
+            style={styles.tab}>
+  <View style={[
+  styles.tabInner,
+  index === 0 && (isFocused ? styles.tabInnerHomeActive : (!isFocused && (state.index !== 0) && (state.index === 3 ? styles.tabInnerHomeWhenProfileActive : styles.tabInnerHomeInactive))),
+  index === 1 && (isFocused ? styles.tabInnerHeartActive : (state.index === 2 ? styles.tabInnerHeartWhenChatActive : (state.index === 3 ? styles.tabInnerHeartWhenProfileActive : styles.tabInnerHeart))),
+  index === 2 && (isFocused ? styles.tabInnerChatActive : (state.index === 1 ? styles.tabInnerChatWhenLikeActive : (state.index === 3 ? styles.tabInnerChatWhenProfileActive : styles.tabInnerChatInactive))),
 
-            options={{
-              tabBarShowLabel: false,
-              tabBarButton: props => (
-                <TabButton {...props} item={item} index={index} />
-              ),
-            }}
-          />
+ 
+  
+ 
+  index === 3 && (isFocused ? styles.tabInnerProfileActive : (state.index === 1 ? styles.tabInnerProfileWhenLikeActive : (state.index === 2 ? styles.tabInnerProfileWhenChatActive : styles.tabInnerProfileInactive)))
+]}>
+              {!isFocused && (
+                <View style={styles.inactiveIconContainer}>
+                  <Icon
+                    size={26}
+                    color="#374151"
+                    strokeWidth={2.5}
+                  />
+                </View>
+              )}
+              {isFocused && (
+                <>
+                  <Icon
+                    size={26}
+                    color="#FFFFFF"
+                    strokeWidth={2.5}
+                  />
+                  {label && (
+                    <Text style={styles.label} numberOfLines={1}>{label}</Text>
+                  )}
+                </>
+              )}
+            </View>
+          </TouchableOpacity>
         );
       })}
-    </Tab.Navigator>
-
+    </ImageBackground>
   );
+};
 
-}
+export const TabNav = () => {
+  return (
+    <Tab.Navigator
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{headerShown: false}}>
+      <Tab.Screen name="Home" component={Home} />
+      <Tab.Screen name="Likes" component={Discover} />
+      <Tab.Screen name="Messages" component={ChatList} />
+      <Tab.Screen name="Profile" component={Settings} />
+    </Tab.Navigator>
+  );
+};
 
 const styles = StyleSheet.create({
-  tabBtnView: {
-    // backgroundColor: isSelected ? 'blue' : '#FFFF',
+  tabBar: {
+    flexDirection: 'row',
+    height: 80,
+    backgroundColor: 'transparent',
+    position: 'absolute',
+    width: '100%',
+    alignItems: 'center',
+    paddingHorizontal: width * 0.014, 
+     overflow: 'hidden',
+  },
+  slider: {
+    position: 'absolute',
+    width: width / 4 + 15,
+    height: 50,
+    backgroundColor: '#F23576',
+    borderRadius: 30,
+    alignSelf: 'center',
+    top: '20%', 
+  },
+  tab: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20
-  },
-  tabBtn: {
-    height: 40,
-    width: 40,
-    // padding:10,
     alignItems: 'center',
+    height: 75,
+  },
+  tabInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: width * 0.022,  
+    marginLeft: width * 0.05,  
+  },
+  label: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    flexShrink: 0,
+  },
+  tabInnerHomeActive: {
+    marginLeft: width * 0.087,
+    marginRight: 0,
+     marginTop: -height * 0.012,
+   
+  },
+  tabInnerHeart: {
+    marginLeft: width * 0.23,  
+    marginRight: width * 0.027,
+     marginTop: -height * 0.005, 
+  },
+ tabInnerHeartActive: {
+  marginLeft: width * 0.022,
+  marginRight: width * 0.054,
+  flexDirection: 'row',     
+  flexWrap: 'nowrap',       
+  alignItems: 'center',     
+},
+  tabInnerChat: {
+    marginLeft: width * 0.108,  
+   
+  },
+  tabInnerChatActive: {
+    marginLeft: 0,
+    marginRight: width * 0.10,  
+    flexDirection: 'row',   
+    flexWrap: 'nowrap',      
+    alignItems: 'center',    
+  },
+  tabInnerChatInactive: {
+    marginLeft: width * 0.19, 
+    marginRight: width * 0.014,  
     justifyContent: 'center',
-    borderRadius: 25,
+     marginTop: -height * 0.005,
   },
-  tabBtnActive: {
-    backgroundColor: Constants.white,
+
+  tabInnerChatWhenLikeActive: {
+  marginLeft: width * 0.16,  
+  marginRight: width * 0.068,
+  marginTop: -height * 0.0001,
+},
+tabInnerProfileWhenChatActive: {
+  marginLeft: width * 0.025, 
+  marginRight: 0,
+  justifyContent: 'center',
+},
+tabInnerProfileWhenLikeActive: {
+  marginLeft: width * 0.035,  
+  marginRight: 0,
+  justifyContent: 'center',
+},
+  tabInnerHomeInactive: {
+    marginLeft: 0,
+    marginRight: width * 0.076, 
   },
-  tabBtnInActive: {
-    backgroundColor: 'white',
+  tabInnerHeartWhenChatActive: {
+    marginLeft: width * 0.025, 
+    marginRight: width * 0.189,  
   },
-  tabtxt: {
-    color: Constants.white,
-    fontSize: 12,
-    fontWeight: '400',
-    // alignSelf:'center'
+  tabInnerProfileActive: {
+    marginLeft: -width * 0.122,  
+    marginRight: width * 0.054,  
+    justifyContent: 'flex-start',
+     gap: 8,
+       flexWrap: 'nowrap', 
+  },
+  tabInnerProfileInactive: {
+    marginLeft: width * 0.009,  
+    marginRight: 0,
+    justifyContent: 'center',
+  },
+  tabInnerHomeWhenProfileActive: {
+    marginLeft: 0,
+    marginRight: width * 0.081, 
+  },
+  tabInnerHeartWhenProfileActive: {
+   marginLeft: width * 0.014,
+    marginRight: width * 0.189,  
+  },
+  tabInnerChatWhenProfileActive: {
+  marginLeft: width * 0.029,
+    marginRight: width * 0.324,  
+  },
+  inactiveIconContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 55,
+    width: 55,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 5,
   },
 });

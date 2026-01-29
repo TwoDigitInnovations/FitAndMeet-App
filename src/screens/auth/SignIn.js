@@ -1,161 +1,683 @@
+import React, {useState, useRef, useEffect, useContext} from 'react';
 import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    Image,
-    Linking,
-    ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  StatusBar,
+  Image,
+  Alert,
+  ActivityIndicator,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
-import React, { useContext, useEffect, useState } from 'react';
-import styles from './styles';
-import { navigate, reset } from '../../utils/navigationRef';
-import Constants from '../../utils/Constant';
-import * as Yup from 'yup';
-import { Formik, useFormik } from 'formik';
-import axios, { setApiToken } from '../../utils/axios'
-import { LoadContext, UserContext } from '../../../App';
-import Toast from 'react-native-toast-message'
-import { FontAwesome6 } from "@react-native-vector-icons/fontawesome6";
-import { setAuthToken } from '../../utils/storage';
+import { setAuthToken, getAuthToken } from '../../utils/storage';
+import apiService from '../../services/apiService';
+import CountryPicker from 'react-native-country-picker-modal';
+import RegistrationProgressModal from '../../components/RegistrationProgressModal';
+import { AuthContext } from '../../../App';
+import {useTranslation} from 'react-i18next';
 
-const SignIn = () => {
-    const [showPass, setShowPass] = useState(true);
-    const [loading, setLoading] = useContext(LoadContext);
-    const [user, setUser] = useContext(UserContext);
+const SignIn = ({navigation}) => {
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [showOTP, setShowOTP] = useState(false);
+  const [otp, setOtp] = useState(['', '', '', '']);
+  const [timer, setTimer] = useState(52);
+  const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [countryCode, setCountryCode] = useState('US');
+  const [callingCode, setCallingCode] = useState('1');
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [phoneLength, setPhoneLength] = useState(10);
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [registrationData, setRegistrationData] = useState(null);
+  const otpRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
 
-    const validationSchema = Yup.object().shape({
-        email: Yup.string().email('Invalid email').required('Email is required'),
-        password: Yup.string().min(8, 'Password must be at least 8 characters').required('Password is required'),
-    });
+  // Get authentication functions from context
+  const { handleLoginSuccess } = useContext(AuthContext);
+  const {t} = useTranslation();
 
-    const formik = useFormik({
-        initialValues: {
-            email: '',
-            password: '',
-        },
-        validationSchema: validationSchema,
-        onSubmit: (values, assets) => {
-            submit(values, assets)
-        },
-    });
+  // Country-specific phone number lengths
+  const getPhoneLength = (country) => {
+    const phoneLengths = {
+      US: 10, IN: 10, GB: 10, CA: 10, AU: 9, CN: 11, JP: 10, DE: 11, FR: 9, BR: 11,
+      MX: 10, IT: 10, ES: 9, KR: 10, RU: 10, SA: 9, AE: 9, SG: 8, MY: 10, TH: 9,
+      PH: 10, ID: 11, VN: 9, PK: 10, BD: 10, NG: 10, ZA: 9, EG: 10, TR: 10, AR: 10,
+    };
+    return phoneLengths[country] || 10;
+  };
 
-    const submit = async (value, { resetForm }) => {
-        console.log('enter')
-        // const player_id = await OneSignal.User.pushSubscription.getIdAsync()
-        //   const device_token = await OneSignal.User.pushSubscription.getTokenAsync()
+  useEffect(() => {
+    if (showOTP && timer > 0) {
+      const interval = setInterval(() => {
+        setTimer(prev => prev - 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [showOTP, timer]);
 
-        //     value.player_id= player_id
-        //     value.device_token =device_token,
-        setLoading(true)
-        try {
-            setLoading(false);
-            const res = await axios.post('auth/login', value);
+  const handleBack = () => {
+    if (showOTP) {
+      setShowOTP(false);
+      setOtp(['', '', '', '']);
+      setTimer(52);
+    } else {
+      navigation.goBack();
+    }
+  };
 
-            if (res.status) {
-                setApiToken(res.data.token);
-                await setAuthToken(res.data.token)
-                setUser(res.data.user)
-                resetForm()
-                reset('App')
-            }
-            console.log(res)
-        } catch (err) {
-            Toast.show({
-                type: 'error',
-                text1: err
-            });
-            setLoading(false);
-            console.log(err)
+  const handlePhoneSubmit = async () => {
+    console.log('=== HANDLE PHONE SUBMIT DEBUG ===');
+    console.log('Phone Number:', phoneNumber);
+    console.log('Country Code:', countryCode);
+    console.log('Calling Code:', callingCode);
+    
+    const expectedLength = getPhoneLength(countryCode);
+    console.log('Expected Length:', expectedLength);
+    console.log('Actual Length:', phoneNumber.length);
+    
+    if (phoneNumber.length !== expectedLength) {
+      console.log('ERROR: Invalid phone number length');
+      Alert.alert(
+        t('auth.otp.invalid_phone'), 
+        t('auth.otp.invalid_phone_message', {length: expectedLength})
+      );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const requestData = {
+        phoneNumber,
+        countryCode: `+${callingCode}`,
+        isSignIn: true,
+      };
+      
+      console.log('=== SENDING REQUEST ===');
+      console.log('Request Data:', JSON.stringify(requestData, null, 2));
+      
+      const response = await apiService.PostPublic('api/auth/send-otp', requestData);
+
+      console.log('=== RECEIVED RESPONSE ===');
+      console.log('Response:', JSON.stringify(response, null, 2));
+
+      if (response.success) {
+        console.log('=== SUCCESS RESPONSE ===');
+        setUserId(response.userId);
+        setShowOTP(true);
+        Alert.alert(t('auth.otp.otp_sent'), t('auth.otp.otp_sent_message'));
+      } else {
+        console.log('=== ERROR RESPONSE ===');
+        console.log('Error Message:', response.message);
+        console.log('Requires Registration:', response.requiresRegistration);
+        console.log('Next Screen:', response.nextScreen);
+        
+        if (response.requiresRegistration) {
+          // Handle incomplete profile case - show OTP first
+          console.log('=== INCOMPLETE PROFILE DETECTED ===');
+          console.log('Setting up OTP screen for incomplete profile');
+          
+          setUserId(response.userId);
+          setShowOTP(true);
+          
+          // Store registration data for after OTP verification
+          setRegistrationData({
+            currentStep: response.currentStep || 0,
+            progressPercent: response.progressPercent || 0,
+            stepDescription: response.message || 'Complete your registration',
+            nextScreen: response.nextScreen || 'SelectGym'
+          });
+          
+          Alert.alert(
+            'Profile Incomplete', 
+            `${response.message}\n\nPlease verify OTP first, then continue registration.`,
+            [{ text: 'OK' }]
+          );
+        } else {
+          Alert.alert(t('auth.otp.error'), response.message || t('auth.otp.failed_send_otp'));
+        }
+      }
+    } catch (error) {
+      console.error('=== SEND OTP ERROR ===');
+      console.error('Error details:', error);
+      Alert.alert(t('auth.otp.error'), t('auth.otp.failed_send_otp'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpChange = async (value, index) => {
+    if (value.length > 1) return;
+    
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    if (value && index < 3) {
+      otpRefs[index + 1].current?.focus();
+    }
+
+    if (value && index === 3) {
+      const fullOtp = [...newOtp.slice(0, 3), value].join('');
+      if (fullOtp.length === 4) {
+        await verifyOTP(fullOtp);
+      }
+    }
+  };
+
+  const verifyOTP = async (otpCode) => {
+    setLoading(true);
+    try {
+      console.log('=== VERIFY OTP DEBUG ===');
+      console.log('Phone Number:', phoneNumber);
+      console.log('OTP Code:', otpCode);
+      
+      const response = await apiService.PostPublic('api/auth/verify-otp', {
+        phoneNumber,
+        otp: otpCode,
+      });
+
+      console.log('=== BACKEND RESPONSE ===');
+      console.log('Full Response:', JSON.stringify(response, null, 2));
+      console.log('Success:', response.success);
+      console.log('Profile Completed:', response.user?.profileCompleted);
+      console.log('Next Screen:', response.nextScreen);
+      console.log('Progress Percent:', response.progressPercent);
+      console.log('Requires Registration:', response.requiresRegistration);
+
+      if (response.success) {
+        // Store token using proper storage utility
+        const tokenSaved = await setAuthToken(response.token);
+        
+        if (!tokenSaved) {
+          Alert.alert('Error', 'Failed to save authentication token');
+          return;
         }
 
+        // Verify token was saved
+        const savedToken = await getAuthToken();
+        console.log('Token saved successfully:', savedToken ? 'Yes' : 'No');
 
-    };
+       
+        if (response.user.profileCompleted) {
+         
+          if (handleLoginSuccess) {
+           
+            handleLoginSuccess(response.user);
+          }
+          
+       
+        } else {
+         
+          const nextScreen = registrationData?.nextScreen || response.nextScreen || 'SelectGym';
+          const progressPercent = registrationData?.progressPercent || response.progressPercent || 0;
+   
+          setRegistrationData(null);
+     
+          navigation.navigate(nextScreen);
+          setTimeout(() => {
+            Alert.alert(
+              'Profile Incomplete',
+              `Continuing registration (${progressPercent}% complete)`,
+              [{ text: 'OK' }]
+            );
+          }, 100);
+        }
+      } else {
+   
+        if (response.requiresRegistration) {
+      
+          const nextScreen = registrationData?.nextScreen || response.nextScreen || 'SelectGym';
+          const progressPercent = registrationData?.progressPercent || response.progressPercent || 0;
+          setRegistrationData(null);
+        
+       
+          navigation.navigate(nextScreen);
+        
+          setTimeout(() => {
+            Alert.alert(
+              'Profile Incomplete',
+              `Continuing registration (${progressPercent}% complete)`,
+              [{ text: 'OK' }]
+            );
+          }, 100);
+        } else {
+          Alert.alert(t('auth.otp.invalid_otp'), response.message || t('auth.otp.invalid_otp_message'));
+          setOtp(['', '', '', '']);
+          otpRefs[0].current?.focus();
+        }
+      }
+    } catch (error) {
+   
+      console.error('Error details:', error);
+      Alert.alert(t('auth.otp.error'), t('auth.otp.failed_verify_otp'));
+      setOtp(['', '', '', '']);
+      otpRefs[0].current?.focus();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpKeyPress = (e, index) => {
+    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
+      otpRefs[index - 1].current?.focus();
+    }
+  };
+
+  const handleProgressModalClose = () => {
+    setShowProgressModal(false);
+    setRegistrationData(null);
+   
+    navigation.goBack();
+  };
+
+  const handleProgressModalContinue = () => {
+    setShowProgressModal(false);
+    if (registrationData?.nextScreen) {
+      navigation.navigate(registrationData.nextScreen);
+    }
+    setRegistrationData(null);
+  };
+
+  const handleResendOTP = async () => {
+    if (timer > 0) return;
+    
+    setLoading(true);
+    try {
+      const response = await apiService.PostPublic('api/auth/send-otp', {
+        phoneNumber,
+        countryCode: `+${callingCode}`,
+        isSignIn: true,
+      });
+
+      if (response.success) {
+        setTimer(52);
+        setOtp(['', '', '', '']);
+        Alert.alert(t('auth.otp.otp_sent'), t('auth.otp.otp_sent_message'));
+      } else {
+        Alert.alert(t('auth.otp.error'), response.message || t('auth.otp.failed_send_otp'));
+      }
+    } catch (error) {
+      console.error('Resend OTP error:', error);
+      Alert.alert(t('auth.otp.error'), t('auth.otp.failed_send_otp'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (showOTP) {
     return (
-        <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor="#010918" barStyle="light-content" translucent={false} />
+        
+        <Image
+          source={require('../../Assets/images/img4.png')}
+          style={styles.image}
+          resizeMode="cover"
+        />
 
-            {/* <View > */}
-            <View style={styles.buttompart} >
-                <Image source={require('../../Assets/images/logo.png')} style={styles.proimg} />
-                <Text style={styles.headtxt} >Login</Text>
-                <View>
-                    <Text style={styles.titletext}>Email</Text>
-                    <View style={styles.inpcov}>
-                        <TextInput
-                            style={styles.inputfield}
-                            placeholder="Enter your email"
-                            textAlign='left'
-                            placeholderTextColor={Constants.customgrey2}
-                            value={formik.values.email}
-                            onChangeText={formik.handleChange('email')}
-                            onBlur={formik.handleBlur('email')}
-                        />
-                    </View>
-                </View>
+        <Image
+          source={require('../../Assets/images/shadow.png')}
+          style={styles.shadowImage}
+          resizeMode="stretch"
+        />
 
-                {formik.touched.email && formik.errors.email &&
-                    <Text style={styles.require}>{formik.errors.email}</Text>
-                }
-                <View>
-                    <Text style={styles.titletext}>Password</Text>
-                    <View style={styles.inpcov}>
-                        <TextInput
-                            style={styles.inputfield}
-                            placeholder="Enter Password"
-                            secureTextEntry={showPass}
-                            placeholderTextColor={Constants.customgrey2}
-                            value={formik.values.password}
-                            onChangeText={formik.handleChange('password')}
-                            onBlur={formik.handleBlur('password')}
-                        />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.bottomCardOTP}>
+              <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+                <Image
+                  source={require('../../Assets/images/back.png')}
+                  style={styles.backIcon}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
 
-                        <TouchableOpacity
-                            onPress={() => {
-                                setShowPass(!showPass);
-                            }}
-                            style={[styles.iconView, { borderRightWidth: 0 }]}>
-                            {/* <Image
-                            source={
-                                showPass
-                                    ? require('../../Assets/Images/eye-1.png')
-                                    : require('../../Assets/Images/eye.png')
-                            }
-                            style={{ height: 28, width: 28 }}
-                            resizeMode="contain"
-                        /> */}
-                        </TouchableOpacity>
-                    </View>
-                </View>
-                {formik.touched.password && formik.errors.password &&
-                    <Text style={styles.require}>{formik.errors.password}</Text>
-                }
-                <Text style={styles.forgtxt} onPress={() => navigate('ForgotPassword')}>
-                    Forgot Password ?
+              <Text style={styles.title}>{t('auth.otp.title')}</Text>
+              <Text style={styles.subtitle}>
+                {t('auth.otp.subtitle')}
+              </Text>
+              <Text style={styles.phoneDisplay}>+{callingCode}-{phoneNumber}</Text>
+
+              <View style={styles.otpContainer}>
+                {otp.map((digit, index) => (
+                  <TextInput
+                    key={index}
+                    ref={otpRefs[index]}
+                    style={styles.otpBox}
+                    value={digit}
+                    onChangeText={value => handleOtpChange(value, index)}
+                    onKeyPress={e => handleOtpKeyPress(e, index)}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    selectTextOnFocus
+                  />
+                ))}
+              </View>
+
+              <TouchableOpacity
+                onPress={handleResendOTP}
+                disabled={timer > 0 || loading}
+                style={styles.resendContainer}>
+                <Text style={[styles.resendText, timer > 0 && styles.resendDisabled]}>
+                  {t('auth.otp.resend_text')}
                 </Text>
-                <TouchableOpacity style={styles.btncov} onPress={formik.handleSubmit}>
-                    <Text style={styles.btntxt}>Sign In</Text>
-                </TouchableOpacity>
-                <View style={styles.linecontainer}>
-                    <View style={styles.line} />
-                    <Text style={styles.text}>OR</Text>
-                    <View style={styles.line} />
+                <Text style={[styles.timerText, timer > 0 && styles.resendDisabled]}>
+                  00:{timer.toString().padStart(2, '0')}
+                </Text>
+              </TouchableOpacity>
+
+              {loading && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#F23576" />
                 </View>
-                <TouchableOpacity style={styles.socialbtncov} onPress={formik.handleSubmit}>
-                    <Image source={require('../../Assets/images/g-logo.png')} style={{ height: 35, width: 35 }} />
-                    <Text style={styles.socialbtntxt}>Sign In with Google</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.socialbtncov} onPress={formik.handleSubmit}>
-                    <Image source={require('../../Assets/images/apple.png')} style={{ height: 35, width: 35, }} resizeMode='contain' />
-                    <Text style={styles.socialbtntxt}>Sign In with Apple</Text>
-                </TouchableOpacity>
+              )}
             </View>
-            <Text style={styles.textcov} onPress={() => navigate('SignUp')}>
-                <Text style={[styles.lasttxt, { color: Constants.customgrey }]}>Don’t have an account ? </Text>
-                <Text style={[styles.lasttxt, { color: Constants.customblack, textDecorationLine: 'underline' }]}>Sign Up</Text>
-            </Text>
-            {/* </View> */}
-        </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor="#010918" barStyle="light-content" translucent={false} />
+      
+      <Image
+        source={require('../../Assets/images/img4.png')}
+        style={styles.image}
+        resizeMode="cover"
+      />
+
+      {/* <Image
+        source={require('../../Assets/images/shadow.png')}
+        style={styles.shadowImage}
+        resizeMode="stretch"
+      /> */}
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}>
+            <View style={styles.bottomCard}>
+              <View style={styles.logoContainer}>
+                <Image
+                  source={require('../../Assets/images/newlogo.png')}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+              </View>
+
+              <Text style={styles.title}>{t('auth.signin.title')}</Text>
+              <Text style={styles.subtitle}>{t('auth.signin.subtitle')}</Text>
+
+              <View style={styles.phoneContainer}>
+                <TouchableOpacity 
+                  style={styles.countryCode}
+                  onPress={() => setShowCountryPicker(true)}>
+                  <CountryPicker
+                    countryCode={countryCode}
+                    withFilter
+                    withFlag
+                    withCallingCode
+                    withEmoji
+                    onSelect={(country) => {
+                      setCountryCode(country.cca2);
+                      setCallingCode(country.callingCode[0]);
+                      setPhoneLength(getPhoneLength(country.cca2));
+                      setPhoneNumber('');
+                    }}
+                    visible={showCountryPicker}
+                    onClose={() => setShowCountryPicker(false)}
+                  />
+                  <Text style={styles.countryCodeText}>+{callingCode}</Text>
+                </TouchableOpacity>
+                <TextInput
+                  style={styles.phoneInput}
+                  placeholder={t('auth.signin.phone_placeholder', {length: phoneLength})}
+                  placeholderTextColor="#A0A0A0"
+                  keyboardType="phone-pad"
+                  value={phoneNumber}
+                  onChangeText={setPhoneNumber}
+                  onSubmitEditing={handlePhoneSubmit}
+                  maxLength={phoneLength}
+                />
+              </View>
+
+              <TouchableOpacity 
+                style={[styles.signInButton, loading && styles.signInButtonDisabled]} 
+                onPress={handlePhoneSubmit}
+                disabled={loading}>
+                {loading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.signInButtonText}>{t('auth.signin.signin_button')}</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+                <Text style={styles.signUpLink}>
+                  {t('auth.signin.signup_link')} <Text style={styles.signUpLinkBold}>{t('auth.signin.signup_link_bold')}</Text>
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+
+      {/* Registration Progress Modal */}
+      <RegistrationProgressModal
+        visible={showProgressModal}
+        onClose={handleProgressModalClose}
+        onContinue={handleProgressModalContinue}
+        currentStep={registrationData?.currentStep || 0}
+        stepDescription={registrationData?.stepDescription || ''}
+        progressPercent={registrationData?.progressPercent || 0}
+      />
+    </SafeAreaView>
+  );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#010918',
+  },
+  image: {
+    width: '100%',
+    height: '62%',
+    position: 'absolute',
+    top: 0,
+  },
+  shadowImage: {
+    position: 'absolute',
+    bottom: -10,
+    width: '100%',
+    height: 500,
+    zIndex: 1,
+    opacity: 1,
+  },
+  keyboardView: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'flex-end',
+  },
+  bottomCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 25,
+    paddingTop: 40,
+    paddingBottom: 50,
+    alignItems: 'center',
+  },
+  bottomCardOTP: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 25,
+    paddingTop: 40,
+    paddingBottom: 50,
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  backIcon: {
+    width: 28,
+    height: 28,
+  },
+  logoContainer: {
+    width: 60,
+    height: 60,
+    backgroundColor: '#010918',
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logo: {
+    width: 40,
+    height: 40,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#A0A0A0',
+    marginBottom: 25,
+  },
+  phoneContainer: {
+    flexDirection: 'row',
+    width: '100%',
+    marginBottom: 20,
+  },
+  countryCode: {
+    width: 90,
+    height: 55,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    backgroundColor: '#FAFAFA',
+    paddingHorizontal: 8,
+  },
+  countryCodeText: {
+    fontSize: 16,
+    color: '#000000',
+    fontWeight: '500',
+  },
+  phoneInput: {
+    flex: 1,
+    height: 55,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    color: '#000000',
+    backgroundColor: '#FFFFFF',
+  },
+  signInButton: {
+    backgroundColor: '#F23576',
+    width: '100%',
+    paddingVertical: 15,
+    borderRadius: 25,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  signInButtonDisabled: {
+    backgroundColor: '#FFB3C6',
+  },
+  signInButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  signUpLink: {
+    fontSize: 14,
+    color: '#A0A0A0',
+  },
+  signUpLinkBold: {
+    color: '#F23576',
+    fontWeight: '600',
+  },
+  phoneDisplay: {
+    fontSize: 14,
+    color: '#000000',
+    marginBottom: 40,
+  },
+  otpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 40,
+    gap: 15,
+  },
+  otpBox: {
+    width: 70,
+    height: 70,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 12,
+    fontSize: 32,
+    textAlign: 'center',
+    color: '#000000',
+    backgroundColor: '#FFFFFF',
+  },
+  resendContainer: {
+    alignItems: 'center',
+  },
+  resendText: {
+    fontSize: 14,
+    color: '#A0A0A0',
+    marginBottom: 5,
+  },
+  timerText: {
+    fontSize: 14,
+    color: '#000000',
+    fontWeight: '600',
+  },
+  resendDisabled: {
+    color: '#D0D0D0',
+  },
+  loadingContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+});
 
 export default SignIn;
