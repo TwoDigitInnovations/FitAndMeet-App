@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SignIn from '../screens/auth/SignIn'
@@ -19,6 +19,9 @@ import ProfileDetails from '../screens/app/ProfileDetails';
 import ChatList from '../screens/app/ChatList';
 import ChatRoom from '../screens/app/ChatRoom';
 import TermsAndConditions from '../screens/TermsAndConditions';
+import Notifications from '../screens/app/Notifications';
+import EditProfile from '../screens/app/EditProfile';
+import { UserContext } from '../../App';
 
 const Stack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
@@ -42,25 +45,58 @@ const AuthNavigate = () => {
 };
 
 const AppNavigate = () => {
+    const [user] = useContext(UserContext);
+    
+    // Determine route based on profile completion
+    const getRequiredRoute = () => {
+        if (!user) return 'TabNav';
+        
+        // If profileCompleted flag is set, go to TabNav
+        if (user.profileCompleted) return 'TabNav';
+        
+        // Check profile completion step by step
+        if (!user.gymName) return 'SelectGym';
+        if (!user.termsAccepted) return 'TermsScreen';
+        if (!user.idDocument || !user.gymMembershipDocument) return 'UploadDocuments';
+        if (!user.firstName || !user.birthday || !user.gender) return 'FirstName';
+        if (!user.interestedIn || !user.lookingFor || !user.ageRange) return 'FirstName';
+        if (!user.interests || user.interests.length === 0) return 'FirstName';
+        if (!user.bio) return 'FirstName';
+        if (!user.photos || user.photos.length === 0) return 'FirstName';
+        
+        // Profile is complete
+        return 'TabNav';
+    };
+    
+    const initialRoute = getRequiredRoute();
+    
     return (
-        <AppStack.Navigator screenOptions={{ headerShown: false }} initialRouteName='TabNav'>
+        <AppStack.Navigator 
+            screenOptions={{ headerShown: false }} 
+            initialRouteName={initialRoute}
+        >
+            <AppStack.Screen name="SelectGym" component={SelectGym} />
+            <AppStack.Screen name="TermsScreen" component={TermsScreen} />
+            <AppStack.Screen name="UploadDocuments" component={UploadDocuments} />
+            <AppStack.Screen name="FirstName" component={FirstName} />
             <AppStack.Screen name="TabNav" component={TabNav} />
             <AppStack.Screen name="MatchScreen" component={MatchScreen} />
             <AppStack.Screen name="ProfileDetails" component={ProfileDetails} />
             <AppStack.Screen name="ChatList" component={ChatList} />
             <AppStack.Screen name="ChatRoom" component={ChatRoom} />
+            <AppStack.Screen name="Notifications" component={Notifications} />
+            <AppStack.Screen name="EditProfile" component={EditProfile} />
         </AppStack.Navigator>
     );
 };
 
 export default function Navigation({ isAuthenticated = false }) {
-    console.log("🚀 Navigation component received isAuthenticated:", isAuthenticated);
+    // Add a key to force remount when authentication changes
+    const navigationKey = isAuthenticated ? 'authenticated' : 'unauthenticated';
     
     if (isAuthenticated) {
-        console.log("✅ User is authenticated - showing App navigation (Home screen)");
-        // User is authenticated - go directly to App (Home screen)
         return (
-            <NavigationContainer ref={navigationRef}>
+            <NavigationContainer ref={navigationRef} key={navigationKey}>
                 <Stack.Navigator
                     screenOptions={{ headerShown: false }}
                     initialRouteName="App"
@@ -70,13 +106,11 @@ export default function Navigation({ isAuthenticated = false }) {
             </NavigationContainer>
         );
     } else {
-        console.log("❌ User is not authenticated - showing Auth navigation (Welcome/Login flow)");
-        // User is not authenticated - show normal flow
         return (
-            <NavigationContainer ref={navigationRef}>
+            <NavigationContainer ref={navigationRef} key={navigationKey}>
                 <Stack.Navigator
                     screenOptions={{ headerShown: false }}
-                    initialRouteName="Splash"
+                    initialRouteName="Auth"
                 >
                     <Stack.Screen name="Splash" component={SplashScreen} />
                     <Stack.Screen name="Onboarding" component={OnboardingScreen} />

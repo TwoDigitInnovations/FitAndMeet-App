@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
+import {useTranslation} from 'react-i18next';
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,6 +20,7 @@ const ProfileDetails = ({ navigation, route }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const {t} = useTranslation();
   
   const passedProfile = route?.params?.profile;
 
@@ -62,7 +64,7 @@ const ProfileDetails = ({ navigation, route }) => {
     if (!profile) return null;
     
     return {
-      name: profile?.name || profile?.firstName || 'John',
+      name: profile?.name || profile?.firstName || t('profiledetails.default_name'),
       age: profile?.age || 28,
       isVerified: profile?.verified || profile?.isPhoneVerified || true,
       images: profile?.photos && profile.photos.length > 0 
@@ -74,14 +76,14 @@ const ProfileDetails = ({ navigation, route }) => {
               'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80',
               'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80',
             ],
-      experience: '5+ Years',
-      clientsTrained: '200+',
-      location: profile?.gym || profile?.gymName || profile?.distance || 'Fit Pro Gym',
-      about: profile?.bio || 'I am a gym trainer who believes fitness is not just about workouts, but about discipline, confidence, and a healthy lifestyle. I help clients push their limits safely and achieve real, lasting results. 💪',
-      lookingFor: profile?.lookingFor || 'Looking for a partner for spec on Monday',
-      interests: profile?.interests || profile?.activities || ['Gym', 'Sports', 'Dance', 'Adventures & outdoor'],
-      specializations: ['Personal Training', 'Functional Training', 'Cardio Fitness'],
-      gender: profile?.gender || 'Male'
+      experience: profile?.experience || t('profiledetails.years_experience'),
+      clientsTrained: profile?.clientsTrained || t('profiledetails.clients_count'),
+      location: profile?.gym || profile?.gymName || profile?.distance || t('profiledetails.default_gym'),
+      about: profile?.bio || t('profiledetails.default_about'),
+      lookingFor: profile?.lookingFor || t('profiledetails.default_looking_for'),
+      interests: profile?.interests || profile?.activities || [t('profiledetails.default_interests.gym'), t('profiledetails.default_interests.sports'), t('profiledetails.default_interests.dance'), t('profiledetails.default_interests.adventure')],
+      specializations: [t('profiledetails.personal_training'), t('profiledetails.functional_training'), t('profiledetails.cardio_fitness')],
+      gender: profile?.gender || t('profiledetails.default_gender')
     };
   };
 
@@ -92,7 +94,7 @@ const ProfileDetails = ({ navigation, route }) => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#F23576" />
-        <Text style={styles.loadingText}>Loading profile...</Text>
+        <Text style={styles.loadingText}>{t('profiledetails.loading')}</Text>
       </View>
     );
   }
@@ -100,12 +102,12 @@ const ProfileDetails = ({ navigation, route }) => {
   if (!profileData) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Profile not found</Text>
+        <Text style={styles.errorText}>{t('profiledetails.profile_not_found')}</Text>
         <TouchableOpacity 
           style={styles.backButton} 
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backButtonText}>Go Back</Text>
+          <Text style={styles.backButtonText}>{t('profiledetails.go_back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -218,7 +220,7 @@ const ProfileDetails = ({ navigation, route }) => {
                   style={styles.statIcon}
                 />
                 <View>
-                  <Text style={styles.statLabel}>Experience</Text>
+                  <Text style={styles.statLabel}>{t('profiledetails.experience')}</Text>
                   <Text style={styles.statValue}>{profileData.experience}</Text>
                 </View>
               </View>
@@ -229,7 +231,7 @@ const ProfileDetails = ({ navigation, route }) => {
                   style={styles.statIcon}
                 />
                 <View>
-                  <Text style={styles.statLabel}>Clients Trained</Text>
+                  <Text style={styles.statLabel}>{t('profiledetails.clients_trained')}</Text>
                   <Text style={styles.statValue}>{profileData.clientsTrained}</Text>
                 </View>
               </View>
@@ -240,7 +242,7 @@ const ProfileDetails = ({ navigation, route }) => {
                   style={styles.statIcon}
                 />
                 <View style={styles.locationTextContainer}>
-                  <Text style={styles.statLabel}>Location</Text>
+                  <Text style={styles.statLabel}>{t('profiledetails.location')}</Text>
                   <Text style={styles.statValue} numberOfLines={2}>{profileData.location}</Text>
                 </View>
               </View>
@@ -248,19 +250,19 @@ const ProfileDetails = ({ navigation, route }) => {
 
          
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>About</Text>
+              <Text style={styles.sectionTitle}>{t('profiledetails.about')}</Text>
               <Text style={styles.aboutText}>{profileData.about}</Text>
             </View>
 
        
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Looking For</Text>
+              <Text style={styles.sectionTitle}>{t('profiledetails.looking_for')}</Text>
               <Text style={styles.lookingForText}>{profileData.lookingFor}</Text>
             </View>
 
        
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Interests</Text>
+              <Text style={styles.sectionTitle}>{t('profiledetails.interests')}</Text>
               <View style={styles.tagsContainer}>
                 {profileData.interests && profileData.interests.map((interest, index) => {
                   let iconSource;
@@ -293,7 +295,7 @@ const ProfileDetails = ({ navigation, route }) => {
 
          
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Specializations</Text>
+              <Text style={styles.sectionTitle}>{t('profiledetails.specializations')}</Text>
               <View style={styles.tagsContainer}>
                 {profileData.specializations && profileData.specializations.map((spec, index) => {
                   let iconSource;
@@ -347,7 +349,7 @@ const ProfileDetails = ({ navigation, route }) => {
                 colors={['#F23576', '#F23576']}
                 style={styles.chatButtonGradient}
               >
-                <Text style={styles.chatButtonText}>Start Chatting</Text>
+                <Text style={styles.chatButtonText}>{t('profiledetails.start_chatting')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>

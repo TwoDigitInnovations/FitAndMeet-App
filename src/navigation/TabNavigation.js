@@ -9,6 +9,7 @@ import {
   ImageBackground,
 } from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {useTranslation} from 'react-i18next';
 import Home from '../screens/app/Home';
 import Discover from '../screens/app/Discover';
 import Settings from '../screens/app/Settings';
@@ -19,13 +20,14 @@ const Tab = createBottomTabNavigator();
 const {width, height} = Dimensions.get('window');
 
 const CustomTabBar = ({state, descriptors, navigation}) => {
+  const {t, i18n} = useTranslation();
   const animatedValue = useRef(new Animated.Value(0)).current;
 
   const tabs = [
-    {icon: HomeIcon, label: 'Home'},
-    {icon: Heart, label: 'Like'},
-    {icon: MessageCircle, label: 'Chat'},
-    {icon: User, label: 'Profile'},
+    {icon: HomeIcon, label: t('navigation.home')},
+    {icon: Heart, label: t('navigation.like')},
+    {icon: MessageCircle, label: t('navigation.chat')},
+    {icon: User, label: t('navigation.profile')},
   ];
 
   useEffect(() => {
@@ -143,7 +145,11 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
                     strokeWidth={2.5}
                   />
                   {label && (
-                    <Text style={styles.label} numberOfLines={1}>{label}</Text>
+                    <Text style={[
+                      styles.label,
+                      // Smaller font for French home tab to fit "Maison"
+                      index === 0 && i18n.language === 'fr' && { fontSize: 14 }
+                    ]} numberOfLines={1}>{label}</Text>
                   )}
                 </>
               )}
@@ -208,7 +214,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   tabInnerHomeActive: {
-    marginLeft: width * 0.087,
+    marginLeft: width * 0.07, // Balanced positioning
     marginRight: 0,
      marginTop: -height * 0.012,
    

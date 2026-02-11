@@ -18,16 +18,23 @@ import {
   Bell,
 } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import {useTranslation} from 'react-i18next';
 
 const {width, height} = Dimensions.get('window');
 
+
+const isSmallScreen = height < 300; 
+const topPadding = isSmallScreen ? 35 : 50; 
+
 const Home = ({navigation}) => {
+  const {t} = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [heartLoading, setHeartLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [likedProfiles, setLikedProfiles] = useState(new Set());
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const scrollViewRef = useRef(null);
 
   
@@ -40,8 +47,21 @@ const Home = ({navigation}) => {
   useFocusEffect(
     React.useCallback(() => {
       fetchLikedProfiles();
+      fetchUnreadNotifications();
     }, [])
   );
+
+  const fetchUnreadNotifications = async () => {
+    try {
+      const response = await apiService.GetApi('api/notifications/unread-count');
+      
+      if (response.success) {
+        setUnreadNotifications(response.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching unread notifications:', error);
+    }
+  };
 
   const fetchLikedProfiles = async () => {
     try {
@@ -87,15 +107,15 @@ const Home = ({navigation}) => {
         setProfiles(response.matches || []);
       } else {
         console.error('API Error:', response.message);
-        Alert.alert('Error', response.message || 'Failed to load matches');
+        Alert.alert(t('auth.otp.error'), response.message || t('home.failed_load_matches'));
         setProfiles([]);
       }
     } catch (error) {
       console.error('Network Error:', error);
       if (typeof error === 'string' && error.includes('No internet')) {
-        Alert.alert('Connection Error', 'Please check your internet connection and try again');
+        Alert.alert(t('home.connection_error'), t('home.check_internet'));
       } else {
-        Alert.alert('Error', 'Something went wrong. Please try again later');
+        Alert.alert(t('auth.otp.error'), t('home.something_wrong'));
       }
       setProfiles([]);
     } finally {
@@ -326,7 +346,7 @@ const Home = ({navigation}) => {
               <Text style={styles.gymName}>
                 {profile.activities && profile.activities.length > 0 
                   ? profile.activities[0] 
-                  : 'Fitness'}
+                  : t('home.fitness')}
               </Text>
             </View>
             <TouchableOpacity 
@@ -345,7 +365,7 @@ const Home = ({navigation}) => {
             </TouchableOpacity>
           </View>
           
-          <Text style={styles.purposeText}>Purpose</Text>
+          <Text style={styles.purposeText}>{t('home.purpose')}</Text>
 
           <View style={styles.activitiesContainer}>
             {profile.activities && profile.activities.length > 1 && (
@@ -383,21 +403,24 @@ const Home = ({navigation}) => {
           style={styles.topUserInfo}
           onPress={() => navigation.navigate('Profile')}
         >
-          <Image
-            source={currentUser?.photos?.[0]?.url ? 
-              {uri: currentUser.photos[0].url} : 
-              {uri: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80'}
-            }
-            style={styles.topAvatar}
-          />
+          {currentUser?.photos?.[0]?.url && (
+            <Image
+              source={{uri: currentUser.photos[0].url}}
+              style={styles.topAvatar}
+            />
+          )}
           <View>
-            <Text style={styles.topUserName}>{currentUser?.firstName || 'User'}</Text>
-            <Text style={styles.welcomeText}>Welcome 👋</Text>
+            {currentUser?.firstName && (
+              <>
+                <Text style={styles.topUserName}>{currentUser.firstName}</Text>
+                <Text style={styles.welcomeText}>{t('home.welcome')} 👋</Text>
+              </>
+            )}
           </View>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.settingsButton}
-          onPress={() => navigation.navigate('Likes')}
+          onPress={() => navigation.navigate('Notifications')}
         >
           <View style={styles.settingsIcon}>
             <Bell 
@@ -405,18 +428,25 @@ const Home = ({navigation}) => {
               color="#000000" 
               strokeWidth={2}
             />
+            {unreadNotifications > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>
+                  {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                </Text>
+              </View>
+            )}
           </View>
         </TouchableOpacity>
       </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading matches...</Text>
+          <Text style={styles.loadingText}>{t('home.loading_matches')}</Text>
         </View>
       ) : profiles.length === 0 ? (
         <View style={styles.noMatchesContainer}>
-          <Text style={styles.noMatchesText}>No matches found</Text>
-          <Text style={styles.noMatchesSubText}>Check back later for new profiles</Text>
+          <Text style={styles.noMatchesText}>{t('home.no_matches_found')}</Text>
+          <Text style={styles.noMatchesSubText}>{t('home.check_back_later')}</Text>
           <TouchableOpacity 
             style={styles.refreshButton} 
             onPress={() => {
@@ -424,7 +454,7 @@ const Home = ({navigation}) => {
               fetchPotentialMatches();
             }}
           >
-            <Text style={styles.refreshButtonText}>Refresh</Text>
+            <Text style={styles.refreshButtonText}>{t('home.refresh')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -466,7 +496,7 @@ const Home = ({navigation}) => {
         <View style={styles.heartLoadingOverlay}>
           <View style={styles.heartLoadingContainer}>
             <ActivityIndicator size="large" color="#FF3B6D" />
-            <Text style={styles.heartLoadingText}>Finding matches...</Text>
+            <Text style={styles.heartLoadingText}>{t('home.finding_matches')}</Text>
           </View>
         </View>
       )}
@@ -483,7 +513,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: topPadding,
     paddingBottom: 20,
   },
   topUserInfo: {
@@ -516,6 +546,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: '#FF3B6D',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: '#5D1F3A',
+  },
+  notificationBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   settingsImage: {
     width: 28,
@@ -590,7 +640,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 35,
     paddingBottom: 20,
   },
   profileHeader: {

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
+import {useTranslation} from 'react-i18next';
 
 const TermsScreen = ({navigation}) => {
   const [ageConfirmed, setAgeConfirmed] = useState(false);
@@ -19,6 +20,7 @@ const TermsScreen = ({navigation}) => {
   const [connectingUsers, setConnectingUsers] = useState(false);
   const [contentModeration, setContentModeration] = useState(false);
   const [improvingService, setImprovingService] = useState(false);
+  const {t} = useTranslation();
 
   const allChecked =
     ageConfirmed &&
@@ -28,6 +30,11 @@ const TermsScreen = ({navigation}) => {
     connectingUsers &&
     contentModeration &&
     improvingService;
+
+  const handleClose = () => {
+    // Navigate back to SelectGym (previous step in registration)
+    navigation.navigate('SelectGym');
+  };
 
   const handleContinue = async () => {
     if (allChecked) {
@@ -39,11 +46,11 @@ const TermsScreen = ({navigation}) => {
         if (response.success) {
           navigation.navigate('UploadDocuments');
         } else {
-          Alert.alert('Error', response.message || 'Failed to accept terms');
+          Alert.alert(t('auth.otp.error'), response.message || t('termsscreen.accept_error'));
         }
       } catch (error) {
         console.error('Accept terms error:', error);
-        Alert.alert('Error', 'Failed to accept terms. Please try again.');
+        Alert.alert(t('auth.otp.error'), t('termsscreen.accept_error'));
       }
     }
   };
@@ -64,28 +71,32 @@ const TermsScreen = ({navigation}) => {
         translucent={false}
       />
 
+      <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+        <View style={styles.closeIcon}>
+          <Text style={styles.closeText}>✕</Text>
+        </View>
+      </TouchableOpacity>
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Before You start....</Text>
+        <Text style={styles.title}>{t('termsscreen.title')}</Text>
         <Text style={styles.subtitle}>
-          To ensure a safe and legal environment,{'\n'}Please review and accept
-          our terms.
+          {t('termsscreen.subtitle')}
         </Text>
 
         <View style={styles.divider} />
 
        
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>[18+]</Text>
+          <Text style={styles.sectionTitle}>{t('termsscreen.age_section')}</Text>
           <View style={styles.checkboxRow}>
             <CheckBox
               checked={ageConfirmed}
               onPress={() => setAgeConfirmed(!ageConfirmed)}
             />
             <Text style={styles.checkboxText}>
-              I certify that I am <Text style={styles.highlight}>18</Text> years
-              of age or older.
+              {t('termsscreen.age_confirmation')}
             </Text>
           </View>
         </View>
@@ -100,8 +111,7 @@ const TermsScreen = ({navigation}) => {
               onPress={() => setTermsAccepted(!termsAccepted)}
             />
             <Text style={styles.checkboxText}>
-              I accept{' '}
-              <Text style={styles.highlight}>Terms of service.</Text>
+              {t('termsscreen.terms_service')}
             </Text>
           </View>
 
@@ -111,9 +121,7 @@ const TermsScreen = ({navigation}) => {
               onPress={() => setPrivacyAccepted(!privacyAccepted)}
             />
             <Text style={styles.checkboxText}>
-              I have read a{' '}
-              <Text style={styles.highlight}>* Privacy Policy</Text> and consent
-              to the processing to my profile, photos, and messages.
+              {t('termsscreen.privacy_policy')}
             </Text>
           </View>
         </View>
@@ -127,8 +135,7 @@ const TermsScreen = ({navigation}) => {
               onPress={() => setTermsService(!termsService)}
             />
             <Text style={styles.checkboxText}>
-              I accept{' '}
-              <Text style={styles.highlight}>Terms of service.</Text>
+              {t('termsscreen.terms_service')}
             </Text>
           </View>
 
@@ -137,7 +144,7 @@ const TermsScreen = ({navigation}) => {
               checked={connectingUsers}
               onPress={() => setConnectingUsers(!connectingUsers)}
             />
-            <Text style={styles.checkboxText}>Connecting with other users</Text>
+            <Text style={styles.checkboxText}>{t('termsscreen.connecting_users')}</Text>
           </View>
 
           <View style={[styles.checkboxRow, styles.marginTop]}>
@@ -146,7 +153,7 @@ const TermsScreen = ({navigation}) => {
               onPress={() => setContentModeration(!contentModeration)}
             />
             <Text style={styles.checkboxText}>
-              Content moderation & saftey
+              {t('termsscreen.content_moderation')}
             </Text>
           </View>
 
@@ -156,7 +163,7 @@ const TermsScreen = ({navigation}) => {
               onPress={() => setImprovingService(!improvingService)}
             />
             <Text style={styles.checkboxText}>
-              Improving the service experience
+              {t('termsscreen.improving_service')}
             </Text>
           </View>
         </View>
@@ -167,7 +174,7 @@ const TermsScreen = ({navigation}) => {
         style={[styles.continueButton, !allChecked && styles.buttonDisabled]}
         onPress={handleContinue}
         disabled={!allChecked}>
-        <Text style={styles.continueButtonText}>Continue</Text>
+        <Text style={styles.continueButtonText}>{t('termsscreen.continue_button')}</Text>
       </TouchableOpacity>
     </LinearGradient>
   );
@@ -176,6 +183,25 @@ const TermsScreen = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    zIndex: 10,
+  },
+  closeIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeText: {
+    fontSize: 20,
+    color: '#FFFFFF',
+    fontWeight: '300',
   },
   scrollContent: {
     paddingHorizontal: 20,

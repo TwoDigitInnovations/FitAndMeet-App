@@ -6,7 +6,10 @@ const SafeImage = ({source, fallbackSource, style, ...props}) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const handleError = (error) => {
-    console.log('SafeImage error:', error);
+    // Only log meaningful errors, not every image load failure
+    if (error && error.nativeEvent && error.nativeEvent.error) {
+      console.log('SafeImage load failed:', source);
+    }
     setHasError(true);
     setIsLoading(false);
   };

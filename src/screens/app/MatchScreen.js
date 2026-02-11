@@ -11,10 +11,12 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import ConfettiCannon from 'react-native-confetti-cannon';
+import {useTranslation} from 'react-i18next';
 
 const {width, height} = Dimensions.get('window');
 
 const MatchScreen = ({navigation, route}) => {
+  const {t} = useTranslation();
   const {currentUser, matchedUser} = route.params || {};
   const [showCelebration, setShowCelebration] = useState(true);
   const confettiRef = useRef(null);
@@ -112,8 +114,8 @@ const MatchScreen = ({navigation, route}) => {
 
       <View style={styles.content}>
         {/* Title */}
-        <Text style={styles.congratulationsText}>Congratulations</Text>
-        <Text style={styles.matchText}>It's a match</Text>
+        <Text style={styles.congratulationsText}>{t('matchscreen.congratulations')}</Text>
+        <Text style={styles.matchText}>{t('matchscreen.its_a_match')}</Text>
 
         {showCelebration && (
           <>
@@ -232,11 +234,11 @@ const MatchScreen = ({navigation, route}) => {
     
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.startChattingButton} onPress={handleStartChatting}>
-          <Text style={styles.startChattingText}>Start Chatting Now</Text>
+          <Text style={styles.startChattingText}>{t('matchscreen.start_chatting_now')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-          <Text style={styles.skipText}>No, Skip</Text>
+          <Text style={styles.skipText}>{t('matchscreen.no_skip')}</Text>
         </TouchableOpacity>
       </View>
     </LinearGradient>

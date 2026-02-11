@@ -14,16 +14,27 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
+import {useTranslation} from 'react-i18next';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+
+// Responsive padding based on screen height
+const isSmallScreen = height < 700;
+const topPadding = isSmallScreen ? 35 : 50;
+
+// Responsive button sizing for small screens
+const isNarrowScreen = width < 400; // Small screens
+const buttonPadding = isNarrowScreen ? 14 : 20;
+const buttonFontSize = isNarrowScreen ? 13 : 14;
 
 const Discover = ({ navigation }) => {
+  const {t, i18n} = useTranslation();
   const [selectedFilter, setSelectedFilter] = useState('Near by');
   const [likedProfiles, setLikedProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   
-  const filterOptions = ['Near by', 'Online Now', 'New Profile'];
+  const filterOptions = [t('discover.near_by'), t('discover.online_now'), t('discover.new_profile')];
 
   useEffect(() => {
     fetchLikedProfiles();
@@ -50,12 +61,12 @@ const Discover = ({ navigation }) => {
         setLikedProfiles(response.likedProfiles || []);
       } else {
         console.error('API Error:', response.message);
-        Alert.alert('Error', response.message || 'Failed to load liked profiles');
+        Alert.alert(t('auth.otp.error'), response.message || t('discover.failed_load_profiles'));
         setLikedProfiles([]);
       }
     } catch (error) {
       console.error('Network Error:', error);
-      Alert.alert('Error', 'Failed to load liked profiles');
+      Alert.alert(t('auth.otp.error'), t('discover.failed_load_profiles'));
       setLikedProfiles([]);
     } finally {
       setLoading(false);
@@ -65,7 +76,7 @@ const Discover = ({ navigation }) => {
   const renderProfileCard = ({ item, index }) => {
     const isLeftColumn = index % 2 === 0;
     
-    // Extract first name only (before any space)
+    
     const firstName = item.name ? item.name.split(' ')[0] : '';
     
     return (
@@ -136,7 +147,7 @@ const Discover = ({ navigation }) => {
               style={styles.profileAvatar}
             />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Discover</Text>
+          <Text style={styles.headerTitle}>{t('discover.title')}</Text>
         </View>
         <View style={styles.headerRight}>
           {/* <TouchableOpacity style={styles.headerIcon}>
@@ -164,13 +175,15 @@ const Discover = ({ navigation }) => {
             key={index}
             style={[
               styles.filterButton,
-              selectedFilter === filter && styles.selectedFilterButton
+              selectedFilter === filter && styles.selectedFilterButton,
+              i18n.language === 'fr' && styles.filterButtonFrench
             ]}
             onPress={() => setSelectedFilter(filter)}
           >
             <Text style={[
               styles.filterText,
-              selectedFilter === filter && styles.selectedFilterText
+              selectedFilter === filter && styles.selectedFilterText,
+              i18n.language === 'fr' && styles.filterTextFrench
             ]}>
               {filter}
             </Text>
@@ -180,24 +193,24 @@ const Discover = ({ navigation }) => {
 
       {/* Section Title */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Profiles Who Likes you</Text>
+        <Text style={styles.sectionTitle}>{t('discover.profiles_who_likes_you')}</Text>
       </View>
 
       {/* Profiles Grid */}
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="white" />
-          <Text style={styles.loadingText}>Loading liked profiles...</Text>
+          <Text style={styles.loadingText}>{t('discover.loading_profiles')}</Text>
         </View>
       ) : likedProfiles.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No liked profiles yet</Text>
-          <Text style={styles.emptySubText}>Start liking profiles to see them here</Text>
+          <Text style={styles.emptyText}>{t('discover.no_liked_profiles')}</Text>
+          <Text style={styles.emptySubText}>{t('discover.start_liking_profiles')}</Text>
           <TouchableOpacity 
             style={styles.refreshButton}
             onPress={fetchLikedProfiles}
           >
-            <Text style={styles.refreshButtonText}>Refresh</Text>
+            <Text style={styles.refreshButtonText}>{t('home.refresh')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -226,7 +239,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: topPadding,
     paddingBottom: 20,
   },
   headerLeft: {
@@ -266,12 +279,15 @@ const styles = StyleSheet.create({
     gap: 18,
   },
   filterButton: {
-    paddingHorizontal: 20,
+    paddingHorizontal: buttonPadding,
     paddingVertical: 10,
     borderRadius: 25,
-  
     borderWidth: 1,
     borderColor: 'white',
+  },
+  filterButtonFrench: {
+    paddingHorizontal: isNarrowScreen ? 10 : 12,
+    paddingVertical: 8,
   },
   selectedFilterButton: {
     backgroundColor: '#FFFFFF99',
@@ -279,8 +295,11 @@ const styles = StyleSheet.create({
   },
   filterText: {
     color: 'white',
-    fontSize: 14,
+    fontSize: buttonFontSize,
     fontWeight: '500',
+  },
+  filterTextFrench: {
+    fontSize: 12,
   },
   selectedFilterText: {
     color: 'black',

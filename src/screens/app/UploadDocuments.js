@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useContext} from 'react';
 import {
   View,
   Text,
@@ -13,17 +13,22 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
 import CameraGalleryPicker from '../../components/CameraGalleryPeacker';
+import {useTranslation} from 'react-i18next';
+import {AuthContext} from '../../../App';
 
 const UploadDocuments = ({navigation}) => {
+  const {logout} = useContext(AuthContext);
   const [idDocument, setIdDocument] = useState(null);
   const [gymDocument, setGymDocument] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [currentUploadType, setCurrentUploadType] = useState(null);
+  const {t} = useTranslation();
   
   const cameraGalleryRef = useRef(null);
 
-  const handleClose = () => {
-    navigation.goBack();
+  const handleClose = async () => {
+    // Always go back to TermsScreen
+    navigation.navigate('TermsScreen');
   };
 
   const handleUploadID = () => {
@@ -63,17 +68,17 @@ const UploadDocuments = ({navigation}) => {
 
         if (currentUploadType === 'id') {
           setIdDocument(documentData);
-          Alert.alert('Success', 'ID document uploaded successfully');
+          Alert.alert(t('auth.otp.otp_sent'), t('uploaddocuments.success_id'));
         } else {
           setGymDocument(documentData);
-          Alert.alert('Success', 'Gym membership document uploaded successfully');
+          Alert.alert(t('auth.otp.otp_sent'), t('uploaddocuments.success_gym'));
         }
       } else {
-        Alert.alert('Error', uploadResponse.error || 'Failed to upload document');
+        Alert.alert(t('auth.otp.error'), uploadResponse.error || t('uploaddocuments.upload_error'));
       }
     } catch (error) {
       console.error('Upload error:', error);
-      Alert.alert('Error', 'Failed to upload document. Please try again.');
+      Alert.alert(t('auth.otp.error'), t('uploaddocuments.upload_error'));
     } finally {
       setUploading(false);
       setCurrentUploadType(null);
@@ -87,7 +92,7 @@ const UploadDocuments = ({navigation}) => {
 
   const handleNext = async () => {
     if (!idDocument || !gymDocument) {
-      Alert.alert('Missing Documents', 'Please upload both ID and gym membership documents');
+      Alert.alert(t('uploaddocuments.missing_documents'), t('uploaddocuments.missing_documents_message'));
       return;
     }
 
@@ -118,11 +123,11 @@ const UploadDocuments = ({navigation}) => {
         console.log('User Step:', response.user?.currentStep);
         
         Alert.alert(
-          'Documents Uploaded!',
-          'Your documents have been uploaded successfully.',
+          t('uploaddocuments.documents_uploaded'),
+          t('uploaddocuments.documents_uploaded_message'),
           [
             {
-              text: 'Continue',
+              text: t('uploaddocuments.continue'),
               onPress: () => {
                 const nextScreen = response.nextStep || 'FirstName';
                 console.log(`Navigating to ${nextScreen}`);
@@ -134,12 +139,12 @@ const UploadDocuments = ({navigation}) => {
       } else {
         console.log('=== UPLOAD FAILED ===');
         console.log('Error:', response.message);
-        Alert.alert('Error', response.message || 'Failed to save documents');
+        Alert.alert(t('auth.otp.error'), response.message || t('uploaddocuments.save_error'));
       }
     } catch (error) {
       console.error('=== SAVE DOCUMENTS ERROR ===');
       console.error('Error details:', error);
-      Alert.alert('Error', 'Failed to save documents. Please try again.');
+      Alert.alert(t('auth.otp.error'), t('uploaddocuments.save_error'));
     } finally {
       setUploading(false);
     }
@@ -166,13 +171,13 @@ const UploadDocuments = ({navigation}) => {
       >
         <View style={styles.content}>
           <Text style={styles.title}>
-            Upload Photo of Your Official ID and Gym Membership Contract
+            {t('uploaddocuments.title')}
           </Text>
           <Text style={styles.subtitle}>
-            Take a clear photo of your Offical ID and gym{'\n'}membership contract
+            {t('uploaddocuments.subtitle')}
           </Text>
 
-          <Text style={styles.label}>ID card / Driver's Licence</Text>
+          <Text style={styles.label}>{t('uploaddocuments.id_label')}</Text>
           <TouchableOpacity style={styles.uploadBox} onPress={handleUploadID} disabled={uploading}>
             {idDocument ? (
               <Image
@@ -196,7 +201,7 @@ const UploadDocuments = ({navigation}) => {
             </View>
           </TouchableOpacity>
 
-          <Text style={styles.label}>Gym Meembership Contract</Text>
+          <Text style={styles.label}>{t('uploaddocuments.gym_label')}</Text>
           <TouchableOpacity
             style={styles.uploadBox}
             onPress={handleUploadMembership}
@@ -226,7 +231,7 @@ const UploadDocuments = ({navigation}) => {
           {uploading && (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#FFFFFF" />
-              <Text style={styles.loadingText}>Uploading...</Text>
+              <Text style={styles.loadingText}>{t('uploaddocuments.uploading')}</Text>
             </View>
           )}
         </View>
@@ -235,7 +240,7 @@ const UploadDocuments = ({navigation}) => {
           style={[styles.nextButton, (!idDocument || !gymDocument || uploading) && styles.nextButtonDisabled]} 
           onPress={handleNext}
           disabled={!idDocument || !gymDocument || uploading}>
-          <Text style={styles.nextButtonText}>Next</Text>
+          <Text style={styles.nextButtonText}>{t('uploaddocuments.next_button')}</Text>
         </TouchableOpacity>
       </ScrollView>
 

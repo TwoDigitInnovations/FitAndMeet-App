@@ -6,10 +6,15 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Dimensions,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import LanguageSelector from '../components/LanguageSelector';
+
+const { height } = Dimensions.get('window');
+const isSmallScreen = height < 200;
+const languageTopPosition = isSmallScreen ? 35 : 50;
 
 const WelcomeScreen = ({navigation}) => {
   const {t} = useTranslation();
@@ -90,7 +95,7 @@ const styles = StyleSheet.create({
   },
   languageContainer: {
     position: 'absolute',
-    top: 50,
+    top: languageTopPosition,
     left: 20,
     zIndex: 10,
   },

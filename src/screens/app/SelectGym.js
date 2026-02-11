@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useContext} from 'react';
 import {
   View,
   Text,
@@ -20,8 +20,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Geolocation from '@react-native-community/geolocation';
 import axios from 'axios';
 import apiService from '../../services/apiService';
+import {useTranslation} from 'react-i18next';
+import {AuthContext} from '../../../App';
 
-const SelectGym = ({navigation}) => {
+const SelectGym = ({navigation, route}) => {
+  const {logout} = useContext(AuthContext);
+  const fromEdit = route?.params?.fromEdit || false;
   const [selectedGym, setSelectedGym] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [gymList, setGymList] = useState([]);
@@ -38,6 +42,7 @@ const SelectGym = ({navigation}) => {
   
   const scrollViewRef = useRef(null);
   const searchInputRef = useRef(null);
+  const {t} = useTranslation();
 
   useEffect(() => {
     requestLocationPermission();
@@ -67,17 +72,17 @@ const SelectGym = ({navigation}) => {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           {
-            title: 'Location Permission',
-            message: 'This app needs access to your location to find nearby gyms.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
+            title: t('selectgym.permission_title'),
+            message: t('selectgym.permission_message'),
+            buttonNeutral: t('selectgym.permission_neutral'),
+            buttonNegative: t('selectgym.permission_negative'),
+            buttonPositive: t('selectgym.permission_positive'),
           },
         );
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
           getCurrentLocation();
         } else {
-          Alert.alert('Permission Denied', 'Location permission is required to find nearby gyms.');
+          Alert.alert(t('selectgym.permission_denied'), t('selectgym.permission_denied_message'));
         }
       } else {
         getCurrentLocation();
@@ -89,7 +94,7 @@ const SelectGym = ({navigation}) => {
 
   const getCurrentLocation = () => {
     setLoading(true);
-    setErrorMessage('Getting your location...');
+    setErrorMessage(t('selectgym.getting_location'));
     console.log('Requesting location...');
     
     Geolocation.getCurrentPosition(
@@ -97,14 +102,14 @@ const SelectGym = ({navigation}) => {
         const {latitude, longitude} = position.coords;
         console.log(`Location found: ${latitude}, ${longitude}`);
         setUserLocation({latitude, longitude});
-        setErrorMessage('Finding nearby gyms...');
+        setErrorMessage(t('selectgym.finding_gyms'));
         fetchGymsFromGooglePlaces(latitude, longitude);
       },
       error => {
         console.error('Location error:', error);
         console.log('Location failed, showing error message');
         setLoading(false);
-        setErrorMessage('Unable to get location. Please enable location services.');
+        setErrorMessage(t('selectgym.location_error'));
       },
       {enableHighAccuracy: true, timeout: 30000, maximumAge: 5000},
     );
@@ -120,7 +125,7 @@ const SelectGym = ({navigation}) => {
       const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=gym&key=${GOOGLE_MAPS_API_KEY}`;
       
       console.log(`Fetching gyms from Google Places API...`);
-      setErrorMessage(`Loading gyms from Google Maps...`);
+      setErrorMessage(t('selectgym.loading_gyms'));
 
       const response = await axios.get(url, {
         timeout: 30000,
@@ -159,12 +164,12 @@ const SelectGym = ({navigation}) => {
           console.log(`Found ${gyms.length} gyms from Google Places`);
         } else {
           console.log('No gyms found from Google Places');
-          setErrorMessage('No gyms found in your area. Please try a different location.');
+          setErrorMessage(t('selectgym.no_gyms_found'));
           setLoading(false);
         }
       } else {
         console.log('Invalid Google Places response');
-        setErrorMessage('Unable to load gyms. Please check your internet connection.');
+        setErrorMessage(t('selectgym.connection_error'));
         setLoading(false);
       }
     } catch (error) {
@@ -172,13 +177,13 @@ const SelectGym = ({navigation}) => {
       
       if (retryCount < 2) {
         console.log(`Retrying Google Places API... (${retryCount + 1})`);
-        setErrorMessage(`Retrying... (${retryCount + 1}/3)`);
+        setErrorMessage(t('selectgym.retrying', {count: retryCount + 1}));
         setTimeout(() => {
           fetchGymsFromGooglePlaces(latitude, longitude, retryCount + 1);
         }, 1000);
       } else {
         console.log('Google Places API failed after retries');
-        setErrorMessage('Unable to load gyms. Please check your internet connection and try again.');
+        setErrorMessage(t('selectgym.connection_retry_error'));
         setLoading(false);
       }
     } finally {
@@ -229,8 +234,21 @@ const SelectGym = ({navigation}) => {
     }
   };
 
-  const handleBack = () => {
-    navigation.goBack();
+  const handleBack = async () => {
+    if (fromEdit) {
+      // Coming from EditProfile, just go back
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      }
+    } else {
+      // Coming from registration flow, logout
+      await logout();
+      // Navigate to Auth stack Welcome screen
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'Auth'}],
+      });
+    }
   };
 
   const handleSelectGym = gym => {
@@ -275,13 +293,19 @@ const SelectGym = ({navigation}) => {
         console.log('Gym selection response:', response);
 
         if (response.success) {
-          navigation.navigate('TermsScreen');
+          if (fromEdit) {
+            // If coming from Edit Profile, go back
+            navigation.goBack();
+          } else {
+            // If from registration flow, continue to TermsScreen
+            navigation.navigate('TermsScreen');
+          }
         } else {
-          Alert.alert('Error', response.message || 'Failed to save gym selection');
+          Alert.alert(t('auth.otp.error'), response.message || t('selectgym.save_error'));
         }
       } catch (error) {
         console.error('Save gym error:', error);
-        Alert.alert('Error', 'Failed to save gym selection. Please try again.');
+        Alert.alert(t('auth.otp.error'), t('selectgym.save_error'));
       }
     }
   };
@@ -331,8 +355,8 @@ const SelectGym = ({navigation}) => {
               showsVerticalScrollIndicator={false}
               nestedScrollEnabled={true}
               bounces={false}>
-              <Text style={styles.title}>Select Your Gym Name</Text>
-              <Text style={styles.subtitle}>Your Gym name is required.</Text>
+              <Text style={styles.title}>{t('selectgym.title')}</Text>
+              <Text style={styles.subtitle}>{t('selectgym.subtitle')}</Text>
 
               {errorMessage ? (
                 <View style={styles.infoContainer}>
@@ -345,7 +369,7 @@ const SelectGym = ({navigation}) => {
                 <TextInput
                   ref={searchInputRef}
                   style={styles.gymInput}
-                  placeholder="Select Your Gym Name"
+                  placeholder={t('selectgym.placeholder')}
                   placeholderTextColor="#A0A0A0"
                   value={searchQuery || selectedGym}
                   onChangeText={(text) => {
@@ -393,7 +417,7 @@ const SelectGym = ({navigation}) => {
                           <Text style={styles.dropdownItemText}>{item.name}</Text>
                           <Text style={styles.gymAddress}>{item.address}</Text>
                           <View style={styles.gymInfoRow}>
-                            <Text style={styles.gymDistance}>{item.distance.toFixed(2)} km away</Text>
+                            <Text style={styles.gymDistance}>{t('selectgym.km_away', {distance: item.distance.toFixed(2)})}</Text>
                             {item.rating && item.rating > 0 && (
                               <Text style={styles.gymRating}>⭐ {item.rating.toFixed(1)}</Text>
                             )}
@@ -409,7 +433,7 @@ const SelectGym = ({navigation}) => {
                     {filteredGyms.length === 0 && (
                       <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>
-                          {searchQuery ? 'No gyms found matching your search' : 'No gyms found nearby'}
+                          {searchQuery ? t('selectgym.no_search_results') : t('selectgym.no_nearby_gyms')}
                         </Text>
                       </View>
                     )}
@@ -429,7 +453,9 @@ const SelectGym = ({navigation}) => {
                   style={[styles.applyButton, !selectedGym && styles.applyButtonDisabled]}
                   onPress={handleApply}
                   disabled={!selectedGym}>
-                  <Text style={styles.applyButtonText}>Apply</Text>
+                  <Text style={styles.applyButtonText}>
+                    {fromEdit ? 'Update' : t('selectgym.apply_button')}
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}

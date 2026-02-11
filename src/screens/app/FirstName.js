@@ -15,6 +15,7 @@ import {
 import DatePicker from 'react-native-date-picker';
 import apiService from '../../services/apiService';
 import CameraGalleryPicker from '../../components/CameraGalleryPeacker';
+import {useTranslation} from 'react-i18next';
 
 const FirstName = ({navigation}) => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -31,12 +32,14 @@ const FirstName = ({navigation}) => {
   const [photos, setPhotos] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(null);
+  const {t} = useTranslation();
   
   const cameraGalleryRef = useRef(null);
 
   const handleBack = () => {
     if (currentStep === 1) {
-      navigation.goBack();
+      // Always go back to UploadDocuments
+      navigation.navigate('UploadDocuments');
     } else {
       setCurrentStep(currentStep - 1);
     }
@@ -138,11 +141,11 @@ const FirstName = ({navigation}) => {
     try {
       const response = await apiService.Post('api/registration/update-profile', data);
       if (!response.success) {
-        Alert.alert('Error', response.message || 'Failed to update profile');
+        Alert.alert(t('auth.otp.error'), response.message || t('firstname.update_error'));
       }
     } catch (error) {
       console.error('Update profile error:', error);
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
+      Alert.alert(t('auth.otp.error'), t('firstname.update_error'));
     }
   };
 
@@ -154,14 +157,14 @@ const FirstName = ({navigation}) => {
       if (response.success) {
         // Registration completed successfully
         Alert.alert(
-          'Registration Complete!', 
-          'Welcome to Fit & Meet! Your profile has been created successfully.',
+          t('firstname.registration_complete'), 
+          t('firstname.registration_complete_message'),
           [
-            { text: 'Get Started', onPress: () => {
-              // Navigate to home screen
+            { text: t('firstname.get_started'), onPress: () => {
+              // Navigate directly to TabNav (Home screen)
               navigation.reset({
                 index: 0,
-                routes: [{name: 'App'}],
+                routes: [{name: 'TabNav'}],
               });
             }}
           ]
@@ -169,16 +172,16 @@ const FirstName = ({navigation}) => {
       } else {
         if (response.missingFields && response.missingFields.length > 0) {
           Alert.alert(
-            'Profile Incomplete', 
+            t('firstname.profile_incomplete'), 
             `Please complete the following: ${response.missingFields.join(', ')}`
           );
         } else {
-          Alert.alert('Error', response.message || 'Failed to complete registration');
+          Alert.alert(t('auth.otp.error'), response.message || t('firstname.complete_error'));
         }
       }
     } catch (error) {
       console.error('Complete registration error:', error);
-      Alert.alert('Error', 'Failed to complete registration. Please try again.');
+      Alert.alert(t('auth.otp.error'), t('firstname.complete_error'));
     } finally {
       setUploading(false);
     }
@@ -221,13 +224,13 @@ const FirstName = ({navigation}) => {
        
         await updateProfile({photos: newPhotos});
         
-        Alert.alert('Success', 'Photo uploaded successfully');
+        Alert.alert(t('auth.otp.otp_sent'), t('firstname.photo_uploaded'));
       } else {
-        Alert.alert('Error', uploadResponse.error || 'Failed to upload photo');
+        Alert.alert(t('auth.otp.error'), uploadResponse.error || t('firstname.upload_error'));
       }
     } catch (error) {
       console.error('Upload photo error:', error);
-      Alert.alert('Error', 'Failed to upload photo');
+      Alert.alert(t('auth.otp.error'), t('firstname.upload_error'));
     } finally {
       setUploading(false);
       setCurrentPhotoIndex(null);
@@ -253,14 +256,13 @@ const FirstName = ({navigation}) => {
         return {
           progress: '14%',
           image: require('../../Assets/images/name1.png'),
-          title: "What's your first name?",
-          placeholder: 'Diya',
+          title: t('firstname.step1_title'),
+          placeholder: t('firstname.step1_placeholder'),
           value: firstName,
           onChangeText: setFirstName,
           subtitle: (
             <Text style={styles.firstNameSubtitle}>
-              This is how it'll appear on your profile.{'\n'}
-              <Text style={styles.boldText}>Can't change it later.</Text>
+              {t('firstname.step1_subtitle')}
             </Text>
           ),
         };
@@ -268,13 +270,13 @@ const FirstName = ({navigation}) => {
         return {
           progress: '28%',
           image: require('../../Assets/images/name2.png'),
-          title: 'Your B-day?',
-          placeholder: '09/12/2000',
+          title: t('firstname.step2_title'),
+          placeholder: t('firstname.step2_placeholder'),
           value: birthday,
           isBirthdayStep: true,
           subtitle: (
             <Text style={styles.firstNameSubtitle}>
-              Your profile shows your age, not your{'\n'}birth date.
+              {t('firstname.step2_subtitle')}
             </Text>
           ),
         };
@@ -282,11 +284,11 @@ const FirstName = ({navigation}) => {
         return {
           progress: '42%',
           image: require('../../Assets/images/name3.png'),
-          title: "What's your gender?",
+          title: t('firstname.step3_title'),
           isGenderStep: true,
           subtitle: (
             <Text style={styles.subtitle}>
-              Select all that describe you to help us show your{'\n'}profile to the right people. You can add more{'\n'}details if you'd like.
+              {t('firstname.step3_subtitle')}
             </Text>
           ),
         };
@@ -294,11 +296,11 @@ const FirstName = ({navigation}) => {
         return {
           progress: '56%',
           image: require('../../Assets/images/name4.png'),
-          title: 'Who are you interested in seeing?',
+          title: t('firstname.step4_title'),
           isInterestedStep: true,
           subtitle: (
             <Text style={styles.interestedSubtitle}>
-              Select all that apply to help us recommend the{'\n'}right people for you.
+              {t('firstname.step4_subtitle')}
             </Text>
           ),
         };
@@ -306,11 +308,11 @@ const FirstName = ({navigation}) => {
         return {
           progress: '70%',
           image: require('../../Assets/images/name5.png'),
-          title: 'Who are you Looking for?',
+          title: t('firstname.step5_title'),
           isLookingForStep: true,
           subtitle: (
             <Text style={styles.interestedSubtitle}>
-              All good if it changes. There's something for{'\n'}everyone.
+              {t('firstname.step5_subtitle')}
             </Text>
           ),
         };
@@ -318,11 +320,11 @@ const FirstName = ({navigation}) => {
         return {
           progress: '84%',
           image: require('../../Assets/images/name6.png'),
-          title: 'What age range are you comfortable connecting with?',
+          title: t('firstname.step6_title'),
           isAgeRangeStep: true,
           subtitle: (
             <Text style={styles.interestedSubtitle}>
-              Select the age range are you looking for.
+              {t('firstname.step6_subtitle')}
             </Text>
           ),
         };
@@ -330,11 +332,11 @@ const FirstName = ({navigation}) => {
         return {
           progress: '98%',
           image: require('../../Assets/images/name5.png'),
-          title: 'What are you into?',
+          title: t('firstname.step7_title'),
           isInterestsStep: true,
           subtitle: (
             <Text style={styles.interestedSubtitle}>
-              You like what you like. Now, let everyone know.
+              {t('firstname.step7_subtitle')}
             </Text>
           ),
         };
@@ -342,11 +344,11 @@ const FirstName = ({navigation}) => {
         return {
           progress: '100%',
           image: require('../../Assets/images/name8.png'),
-          title: 'Me in a few words?',
+          title: t('firstname.step8_title'),
           isBioStep: true,
           subtitle: (
             <Text style={styles.interestedSubtitle}>
-              Write five what you like. Now, let everyone know{'\n'}about your bio.
+              {t('firstname.step8_subtitle')}
             </Text>
           ),
         };
@@ -354,11 +356,11 @@ const FirstName = ({navigation}) => {
         return {
           progress: '100%',
           image: require('../../Assets/images/name9.png'),
-          title: 'Add your Photos',
+          title: t('firstname.step9_title'),
           isPhotoStep: true,
           subtitle: (
             <Text style={styles.interestedSubtitle}>
-              Up to 10 photos max (5MB per photo max)
+              {t('firstname.step9_subtitle')}
             </Text>
           ),
         };
@@ -422,12 +424,12 @@ const FirstName = ({navigation}) => {
           <View>
             {stepData.subtitle}
             
-            <Text style={styles.iAmText}>I am</Text>
+            <Text style={styles.iAmText}>{t('firstname.i_am')}</Text>
             
             <TouchableOpacity 
               style={styles.genderOption} 
               onPress={() => setGender('Man')}>
-              <Text style={styles.genderText}>Man</Text>
+              <Text style={styles.genderText}>{t('firstname.man')}</Text>
               <View style={[styles.radioButton, gender === 'Man' && styles.radioButtonSelected]}>
                 {gender === 'Man' && <View style={styles.radioButtonInner} />}
               </View>
@@ -436,7 +438,7 @@ const FirstName = ({navigation}) => {
             <TouchableOpacity 
               style={styles.genderOption} 
               onPress={() => setGender('Woman')}>
-              <Text style={styles.genderText}>Woman</Text>
+              <Text style={styles.genderText}>{t('firstname.woman')}</Text>
               <View style={[styles.radioButton, gender === 'Woman' && styles.radioButtonSelected]}>
                 {gender === 'Woman' && <View style={styles.radioButtonInner} />}
               </View>
@@ -445,7 +447,7 @@ const FirstName = ({navigation}) => {
             <TouchableOpacity 
               style={styles.genderOption} 
               onPress={() => setGender('Other')}>
-              <Text style={styles.genderText}>Other</Text>
+              <Text style={styles.genderText}>{t('firstname.other')}</Text>
               <View style={[styles.radioButton, gender === 'Other' && styles.radioButtonSelected]}>
                 {gender === 'Other' && <View style={styles.radioButtonInner} />}
               </View>
@@ -489,7 +491,7 @@ const FirstName = ({navigation}) => {
             {uploading && (
               <View style={styles.uploadingContainer}>
                 <ActivityIndicator size="small" color="#FF3B6D" />
-                <Text style={styles.uploadingText}>Uploading...</Text>
+                <Text style={styles.uploadingText}>{t('firstname.uploading')}</Text>
               </View>
             )}
           </View>
@@ -501,7 +503,7 @@ const FirstName = ({navigation}) => {
               style={styles.bioTextArea}
               value={bio}
               onChangeText={setBio}
-              placeholder="Add your bio"
+              placeholder={t('firstname.bio_placeholder')}
               placeholderTextColor="#CCCCCC"
               multiline={true}
               numberOfLines={8}
@@ -514,19 +516,19 @@ const FirstName = ({navigation}) => {
             
             <View style={styles.interestsGrid}>
               {[
-                {name: 'Creativity', image: require('../../Assets/images/Paint.png')},
-                {name: 'Sports', image: require('../../Assets/images/tennis ball.png')},
-                {name: 'Gym', image: require('../../Assets/images/Gym.png')},
-                {name: 'Movies', image: require('../../Assets/images/Clapper Board.png')},
-                {name: 'Gaming', image: require('../../Assets/images/Gaming.png')},
-                {name: 'Going out', image: require('../../Assets/images/Disco Light.png')},
-                {name: 'Music', image: require('../../Assets/images/Music.png')},
-                {name: 'Food & Drink', image: require('../../Assets/images/Food.png')},
-                {name: 'Staying in', image: require('../../Assets/images/Home.png')},
-                {name: 'Concert', image: require('../../Assets/images/Dancing.png')},
-                {name: 'Dance', emoji: '💃'},
-                {name: 'Festival', image: require('../../Assets/images/Barley.png')},
-                {name: 'Adventure & outdoors', image: require('../../Assets/images/image 66.png')},
+                {name: 'Creativity', translationKey: 'firstname.interests.creativity', image: require('../../Assets/images/Paint.png')},
+                {name: 'Sports', translationKey: 'firstname.interests.sports', image: require('../../Assets/images/tennis ball.png')},
+                {name: 'Gym', translationKey: 'firstname.interests.gym', image: require('../../Assets/images/Gym.png')},
+                {name: 'Movies', translationKey: 'firstname.interests.movies', image: require('../../Assets/images/Clapper Board.png')},
+                {name: 'Gaming', translationKey: 'firstname.interests.gaming', image: require('../../Assets/images/Gaming.png')},
+                {name: 'Going out', translationKey: 'firstname.interests.going_out', image: require('../../Assets/images/Disco Light.png')},
+                {name: 'Music', translationKey: 'firstname.interests.music', image: require('../../Assets/images/Music.png')},
+                {name: 'Food & Drink', translationKey: 'firstname.interests.food_drink', image: require('../../Assets/images/Food.png')},
+                {name: 'Staying in', translationKey: 'firstname.interests.staying_in', image: require('../../Assets/images/Home.png')},
+                {name: 'Concert', translationKey: 'firstname.interests.concert', image: require('../../Assets/images/Dancing.png')},
+                {name: 'Dance', translationKey: 'firstname.interests.dance', emoji: '💃'},
+                {name: 'Festival', translationKey: 'firstname.interests.festival', image: require('../../Assets/images/Barley.png')},
+                {name: 'Adventure & outdoors', translationKey: 'firstname.interests.adventure_outdoors', image: require('../../Assets/images/image 66.png')},
               ].map((interest, index) => (
                 <TouchableOpacity 
                   key={index}
@@ -547,7 +549,7 @@ const FirstName = ({navigation}) => {
                   <Text style={[
                     styles.interestText,
                     interests.includes(interest.name) && styles.interestTextSelected
-                  ]}>{interest.name}</Text>
+                  ]}>{t(interest.translationKey)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -560,25 +562,25 @@ const FirstName = ({navigation}) => {
               <TouchableOpacity 
                 style={[styles.ageRangeButton, ageRange === '18-25' && styles.ageRangeButtonSelected]} 
                 onPress={() => setAgeRange('18-25')}>
-                <Text style={[styles.ageRangeText, ageRange === '18-25' && styles.ageRangeTextSelected]}>18-25</Text>
+                <Text style={[styles.ageRangeText, ageRange === '18-25' && styles.ageRangeTextSelected]}>{t('firstname.age_18_25')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[styles.ageRangeButton, ageRange === '25-35' && styles.ageRangeButtonSelected]} 
                 onPress={() => setAgeRange('25-35')}>
-                <Text style={[styles.ageRangeText, ageRange === '25-35' && styles.ageRangeTextSelected]}>25-35</Text>
+                <Text style={[styles.ageRangeText, ageRange === '25-35' && styles.ageRangeTextSelected]}>{t('firstname.age_25_35')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[styles.ageRangeButton, ageRange === '35-45' && styles.ageRangeButtonSelected]} 
                 onPress={() => setAgeRange('35-45')}>
-                <Text style={[styles.ageRangeText, ageRange === '35-45' && styles.ageRangeTextSelected]}>35-45</Text>
+                <Text style={[styles.ageRangeText, ageRange === '35-45' && styles.ageRangeTextSelected]}>{t('firstname.age_35_45')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[styles.ageRangeButton, ageRange === '45-Over' && styles.ageRangeButtonSelected]} 
                 onPress={() => setAgeRange('45-Over')}>
-                <Text style={[styles.ageRangeText, ageRange === '45-Over' && styles.ageRangeTextSelected]}>45-Over</Text>
+                <Text style={[styles.ageRangeText, ageRange === '45-Over' && styles.ageRangeTextSelected]}>{t('firstname.age_45_over')}</Text>
               </TouchableOpacity>
             </View>
             
@@ -603,7 +605,7 @@ const FirstName = ({navigation}) => {
                 style={styles.cardImage}
                 resizeMode="contain"
               />
-              <Text style={styles.cardText}>Long-term Partner</Text>
+              <Text style={styles.cardText}>{t('firstname.long_term_partner')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
@@ -616,7 +618,7 @@ const FirstName = ({navigation}) => {
                 style={styles.cardImage}
                 resizeMode="contain"
               />
-              <Text style={styles.cardText}>Work out Partner</Text>
+              <Text style={styles.cardText}>{t('firstname.workout_partner')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
@@ -629,7 +631,7 @@ const FirstName = ({navigation}) => {
                 style={styles.cardImage}
                 resizeMode="contain"
               />
-              <Text style={styles.cardText}>Looking for Both</Text>
+              <Text style={styles.cardText}>{t('firstname.looking_for_both')}</Text>
             </TouchableOpacity>
           </View>
         ) : stepData.isInterestedStep ? (
@@ -639,7 +641,7 @@ const FirstName = ({navigation}) => {
             <TouchableOpacity 
               style={styles.genderOption} 
               onPress={() => setInterestedIn('Man')}>
-              <Text style={styles.genderText}>Man</Text>
+              <Text style={styles.genderText}>{t('firstname.man')}</Text>
               <View style={[styles.radioButton, interestedIn === 'Man' && styles.radioButtonSelected]}>
                 {interestedIn === 'Man' && <View style={styles.radioButtonInner} />}
               </View>
@@ -648,7 +650,7 @@ const FirstName = ({navigation}) => {
             <TouchableOpacity 
               style={styles.genderOption} 
               onPress={() => setInterestedIn('Woman')}>
-              <Text style={styles.genderText}>Woman</Text>
+              <Text style={styles.genderText}>{t('firstname.woman')}</Text>
               <View style={[styles.radioButton, interestedIn === 'Woman' && styles.radioButtonSelected]}>
                 {interestedIn === 'Woman' && <View style={styles.radioButtonInner} />}
               </View>
@@ -657,7 +659,7 @@ const FirstName = ({navigation}) => {
             <TouchableOpacity 
               style={styles.genderOption} 
               onPress={() => setInterestedIn('Every one')}>
-              <Text style={styles.genderText}>Every one</Text>
+              <Text style={styles.genderText}>{t('firstname.everyone')}</Text>
               <View style={[styles.radioButton, interestedIn === 'Every one' && styles.radioButtonSelected]}>
                 {interestedIn === 'Every one' && <View style={styles.radioButtonInner} />}
               </View>
@@ -691,9 +693,9 @@ const FirstName = ({navigation}) => {
               minimumDate={new Date(1950, 0, 1)}
               onConfirm={handleDateConfirm}
               onCancel={() => setDatePickerOpen(false)}
-              title="Select your birthday"
-              confirmText="Confirm"
-              cancelText="Cancel"
+              title={t('firstname.select_birthday')}
+              confirmText={t('firstname.confirm')}
+              cancelText={t('firstname.cancel')}
             />
           </View>
         ) : (
@@ -725,7 +727,7 @@ const FirstName = ({navigation}) => {
           {uploading ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Text style={styles.nextButtonText}>Next</Text>
+            <Text style={styles.nextButtonText}>{t('firstname.next_button')}</Text>
           )}
         </TouchableOpacity>
       </View>

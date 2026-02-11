@@ -375,7 +375,7 @@ const SignUp = ({navigation}) => {
           </TouchableOpacity>
           <TextInput
             style={styles.phoneInput}
-            placeholder={t('auth.signup.phone_placeholder', {length: phoneLength})}
+            placeholder={t('auth.signup.phone_placeholder')}
             placeholderTextColor="#A0A0A0"
             keyboardType="phone-pad"
             value={phoneNumber}

@@ -14,7 +14,8 @@ import Toast from 'react-native-toast-message';
 import { getAuthToken, deleteAuthToken } from './src/utils/storage'
 import { reset } from './src/utils/navigationRef';
 import apiService from './src/services/apiService';
-import './src/i18n'; // Initialize i18n
+import './src/i18n'; 
+import { LanguageProvider } from './src/contexts/LanguageContext';
 
 export const LoadContext = createContext('');
 export const UserContext = createContext('');
@@ -30,14 +31,15 @@ function App() {
 
   
   const logout = async () => {
-   
     try {
+     
       await deleteAuthToken();
+     
       setuser({});
       setIsAuthenticated(false);
-   
+    
     } catch (error) {
-      console.error("❌ Logout error:", error);
+      console.error("Logout error:", error);
     }
   };
 
@@ -66,7 +68,6 @@ function App() {
 
   const checkLogin = async () => {
     try {
-    
       const token = await getAuthToken();
     
       if (token) {
@@ -74,49 +75,56 @@ function App() {
       }
       
       if (!token) {
-   
         setIsAuthenticated(false);
         return;
       }
       
-     
-      
       try {
         const response = await apiService.GetApi('api/auth/profile');
       
-        
         if (response && response.success && response.user) {
-      
-          
-          setuser(response.user);
         
+          const user = response.user;
+        
+          
+          const isProfileComplete = user.profileCompleted || (
+            user.gymName && 
+            user.firstName && 
+            user.birthday && 
+            user.gender && 
+            user.interestedIn && 
+            user.lookingFor && 
+            user.ageRange && 
+            user.interests && 
+            user.interests.length > 0 && 
+            user.bio && 
+            user.photos && 
+            user.photos.length > 0
+          );
+          
+        
+          user.profileCompleted = isProfileComplete;
+          setuser(user);
           setIsAuthenticated(true);
         } else {
           await deleteAuthToken();
           setIsAuthenticated(false);
         }
       } catch (apiError) {
-       
-        
-       
         if (apiError.message && (apiError.message.includes('401') || apiError.message.includes('403'))) {
-       
           await deleteAuthToken();
         } else {
           console.log("Network error - keeping token for retry");
         }
         
-    
         setIsAuthenticated(false);
       }
     } catch (error) {
-     
       console.log("- Error:", error.message || error);
       await deleteAuthToken();
-    
       setIsAuthenticated(false);
     } finally {
-      console.log("=== AUTHENTICATION CHECK COMPLETE ===");
+      console.log(" AUTHENTICATION CHECK COMPLETE ===");
       console.log("Final isAuthenticated value:", isAuthenticated);
     }
   }
@@ -142,21 +150,21 @@ function App() {
     <SafeAreaProvider>
       <StatusBar barStyle="light-content" backgroundColor="#010918" />
       <SafeAreaView style={styles.container} edges={Platform.OS === 'ios' ? ['top','left',  'right'] : [ 'left', 'right']}>
-        <UserContext.Provider value={[user, setuser]}>
-          <LoadContext.Provider value={[loading, setLoading]}>
-            <AuthContext.Provider value={{ logout, isAuthenticated, setIsAuthenticated, handleLoginSuccess }}>
-              <Spinner isLoading={loading} />
-            
-              {FORCE_AUTH_FOR_TESTING || isAuthenticated ? (
-              
-                <Navigation isAuthenticated={true} />
-              ) : (
-              
-                <Navigation isAuthenticated={false} />
-              )}
-            </AuthContext.Provider>
-          </LoadContext.Provider>
-        </UserContext.Provider>
+        <LanguageProvider>
+          <UserContext.Provider value={[user, setuser]}>
+            <LoadContext.Provider value={[loading, setLoading]}>
+              <AuthContext.Provider value={{ logout, isAuthenticated, setIsAuthenticated, handleLoginSuccess }}>
+                <Spinner isLoading={loading} />
+               
+                {FORCE_AUTH_FOR_TESTING || isAuthenticated ? (
+                  <Navigation isAuthenticated={true} />
+                ) : (
+                  <Navigation isAuthenticated={false} />
+                )}
+              </AuthContext.Provider>
+            </LoadContext.Provider>
+          </UserContext.Provider>
+        </LanguageProvider>
       </SafeAreaView>
       <Toast />
     </SafeAreaProvider>

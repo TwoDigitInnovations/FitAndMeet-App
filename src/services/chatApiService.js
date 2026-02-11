@@ -40,16 +40,32 @@ class ChatApiService {
     try {
       return await this.api.get(url, config);
     } catch (error) {
-      console.error('GET request failed:', error);
       throw error;
     }
   }
 
   async post(url, data = {}, config = {}) {
     try {
+      // Special handling for FormData
+      if (data instanceof FormData) {
+        // For React Native FormData uploads, we need specific configuration
+        const formDataConfig = {
+          ...config,
+          headers: {
+            ...config.headers,
+            'Content-Type': 'multipart/form-data',
+          },
+          transformRequest: (data, headers) => {
+            // Let React Native handle the FormData transformation
+            return data;
+          },
+        };
+        
+        return await this.api.post(url, data, formDataConfig);
+      }
+      
       return await this.api.post(url, data, config);
     } catch (error) {
-      console.error('POST request failed:', error);
       throw error;
     }
   }
@@ -58,7 +74,6 @@ class ChatApiService {
     try {
       return await this.api.put(url, data, config);
     } catch (error) {
-      console.error('PUT request failed:', error);
       throw error;
     }
   }
@@ -67,7 +82,6 @@ class ChatApiService {
     try {
       return await this.api.delete(url, config);
     } catch (error) {
-      console.error('DELETE request failed:', error);
       throw error;
     }
   }

@@ -10,16 +10,25 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  Dimensions,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
 import { deleteAuthToken } from '../../utils/storage';
 import { AuthContext } from '../../../App';
+import {useTranslation} from 'react-i18next';
+import LanguageSelector from '../../components/LanguageSelector';
+
+const { height } = Dimensions.get('window');
+const isSmallScreen = height < 300;
+const topPadding = isSmallScreen ? 35 : 50;
 
 const Settings = ({navigation}) => {
+  const {t} = useTranslation();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   
   // Get logout function from AuthContext
   const { logout } = useContext(AuthContext);
@@ -36,11 +45,11 @@ const Settings = ({navigation}) => {
       if (response.success) {
         setProfileData(response.data);
       } else {
-        Alert.alert('Error', response.message || 'Failed to load profile data');
+        Alert.alert(t('auth.otp.error'), response.message || t('settings.failed_load_profile'));
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);
-      Alert.alert('Error', 'Failed to load profile data');
+      Alert.alert(t('auth.otp.error'), t('settings.failed_load_profile'));
     } finally {
       setLoading(false);
     }
@@ -51,8 +60,11 @@ const Settings = ({navigation}) => {
   };
 
   const confirmLogout = async () => {
+    if (loggingOut) return; // Prevent multiple clicks
+    
     try {
       console.log("🚪 Logout initiated from Settings");
+      setLoggingOut(true);
       setShowLogoutModal(false);
       
       // Call API to logout (optional)
@@ -63,8 +75,13 @@ const Settings = ({navigation}) => {
         console.log("⚠️ API logout failed, but continuing with local logout:", apiError);
       }
       
+      // Delete auth token
+      await deleteAuthToken();
+      
       // Use the logout function from AuthContext
-      await logout();
+      if (logout) {
+        await logout();
+      }
       
       console.log("✅ Logout completed successfully");
     } catch (error) {
@@ -72,10 +89,15 @@ const Settings = ({navigation}) => {
       
       // Even if there's an error, try to logout locally
       try {
-        await logout();
+        await deleteAuthToken();
+        if (logout) {
+          await logout();
+        }
       } catch (localLogoutError) {
         console.error('❌ Local logout also failed:', localLogoutError);
       }
+    } finally {
+      setLoggingOut(false);
     }
   };
 
@@ -96,7 +118,7 @@ const Settings = ({navigation}) => {
     if (profileData?.user) {
       return `${profileData.user.firstName} ${profileData.user.age}`;
     }
-    return 'User';
+    return t('home.user');
   };
 
   if (loading) {
@@ -106,7 +128,7 @@ const Settings = ({navigation}) => {
         locations={[0, 0.4, 0.9, 1]}
         style={[styles.container, styles.loadingContainer]}>
         <ActivityIndicator size="large" color="white" />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={styles.loadingText}>{t('profiledetails.loading')}</Text>
       </LinearGradient>
     );
   }
@@ -127,7 +149,7 @@ const Settings = ({navigation}) => {
               style={styles.backIcon}
             />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={styles.headerTitle}>{t('settings.profile')}</Text>
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.headerIcon}>
@@ -180,12 +202,15 @@ const Settings = ({navigation}) => {
                 </Text>
               </View>
               <View style={styles.progressTextContainer}>
-                <Text style={styles.cardTitle}>Complete your profile</Text>
-                <Text style={styles.cardSubtitle}>to stand out</Text>
+                <Text style={styles.cardTitle}>{t('settings.complete_profile')}</Text>
+                <Text style={styles.cardSubtitle}>{t('settings.to_stand_out')}</Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.editButton}>
-              <Text style={styles.editButtonText}>Edit</Text>
+            <TouchableOpacity 
+              style={styles.editButton}
+              onPress={() => navigation.navigate('EditProfile')}
+            >
+              <Text style={styles.editButtonText}>{t('settings.edit')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -204,22 +229,26 @@ const Settings = ({navigation}) => {
             </View>
             <TouchableOpacity style={styles.upgradeButton}>
               <Text style={styles.upgradeButtonText}>
-                {profileData?.subscription?.type === 'Free' ? 'Upgrade' : 'Premium'}
+                {profileData?.subscription?.type === 'Free' ? t('settings.upgrade') : t('settings.premium')}
               </Text>
             </TouchableOpacity>
           </View>
           
           <View style={styles.featureHeaderRow}>
-            <Text style={styles.whatsIncluded}>What's included</Text>
+            <Text style={styles.whatsIncluded}>{t('settings.whats_included')}</Text>
             <View style={styles.freeHeaderContainer}>
-              <Text style={styles.freeHeaderText}>Free</Text>
-              <Text style={styles.freeHeaderText}>Free</Text>
+              <Text style={styles.freeHeaderText}>{t('settings.free')}</Text>
+              <Text style={styles.freeHeaderText}>{t('settings.free')}</Text>
             </View>
           </View>
           
           {profileData?.subscription?.features?.map((feature, index) => (
             <View key={index} style={styles.featureRow}>
-              <Text style={styles.featureText}>{feature.name}</Text>
+              <Text style={styles.featureText}>
+                {feature.name === 'Top picks' ? t('settings.top_picks') : 
+                 feature.name === 'See whos like you' ? t('settings.see_whos_like_you') : 
+                 feature.name}
+              </Text>
               <View style={styles.featureStatus}>
                 <Image 
                   source={require('../../Assets/images/tick.png')} 
@@ -235,7 +264,7 @@ const Settings = ({navigation}) => {
           
           <View style={styles.seeAllFeaturesContainer}>
             <TouchableOpacity style={styles.seeAllFeatures}>
-              <Text style={styles.featureText}>See all features</Text>
+              <Text style={styles.featureText}>{t('settings.see_all_features')}</Text>
               <Image 
                 source={require('../../Assets/images/right.png')} 
                 style={styles.rightIcon}
@@ -254,9 +283,9 @@ const Settings = ({navigation}) => {
               />
               <View style={styles.smallCardText}>
                 <Text style={styles.smallCardTitle}>
-                  {profileData?.stats?.superLikes || 0} Super likes
+                  {profileData?.stats?.superLikes || 0} {t('settings.super_likes')}
                 </Text>
-                <Text style={styles.smallCardSubtitle}>Get more</Text>
+                <Text style={styles.smallCardSubtitle}>{t('settings.get_more')}</Text>
               </View>
             </View>
             <TouchableOpacity style={styles.plusButton}>
@@ -278,7 +307,7 @@ const Settings = ({navigation}) => {
               />
               <View style={styles.smallCardText}>
                 <Text style={styles.smallCardTitle}>
-                  {profileData?.subscription?.type || 'Free'} For Now
+                  {profileData?.subscription?.type || t('settings.free')} {t('settings.for_now')}
                 </Text>
               </View>
             </View>
@@ -301,9 +330,9 @@ const Settings = ({navigation}) => {
               />
               <View style={styles.smallCardText}>
                 <Text style={styles.smallCardTitle}>
-                  {profileData?.stats?.profileViews || 0} Viewed my Profile
+                  {profileData?.stats?.profileViews || 0} {t('settings.viewed_profile')}
                 </Text>
-                <Text style={styles.smallCardSubtitle}>Get more</Text>
+                <Text style={styles.smallCardSubtitle}>{t('settings.get_more')}</Text>
               </View>
             </View>
             <TouchableOpacity style={styles.plusButton}>
@@ -315,10 +344,22 @@ const Settings = ({navigation}) => {
           </View>
         </View>
 
+        {/* Language Selector */}
+        <View style={styles.languageCard}>
+          <View style={styles.smallCardContent}>
+            <View style={styles.smallCardLeft}>
+              <View style={styles.smallCardText}>
+                <Text style={styles.smallCardTitle}>{t('settings.language')}</Text>
+              </View>
+            </View>
+            <LanguageSelector />
+          </View>
+        </View>
+
         {/* Logout */}
         <View style={styles.logoutCard}>
           <TouchableOpacity style={styles.smallCardContent} onPress={handleLogout}>
-            <Text style={styles.smallCardTitle}>Logout</Text>
+            <Text style={styles.smallCardTitle}>{t('settings.logout')}</Text>
             <Image 
               source={require('../../Assets/images/exit.png')} 
               style={styles.exitIcon}
@@ -345,11 +386,11 @@ const Settings = ({navigation}) => {
               </View>
               
               {/* Title */}
-              <Text style={styles.modalTitle}>Logout</Text>
+              <Text style={styles.modalTitle}>{t('settings.logout')}</Text>
               
               {/* Message */}
               <Text style={styles.modalMessage}>
-                Are you sure you want to logout from your account?
+                {t('settings.logout_confirmation')}
               </Text>
               
               {/* Buttons */}
@@ -357,13 +398,19 @@ const Settings = ({navigation}) => {
                 <TouchableOpacity 
                   style={styles.cancelButton} 
                   onPress={cancelLogout}>
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                  <Text style={styles.cancelButtonText}>{t('firstname.cancel')}</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
-                  style={styles.logoutButton} 
-                  onPress={confirmLogout}>
-                  <Text style={styles.logoutButtonText}>Logout</Text>
+                  style={[styles.logoutButton, loggingOut && styles.logoutButtonDisabled]} 
+                  onPress={confirmLogout}
+                  disabled={loggingOut}
+                  activeOpacity={0.7}>
+                  {loggingOut ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Text style={styles.logoutButtonText}>{t('settings.logout')}</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
@@ -392,7 +439,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: topPadding,
     paddingBottom: 20,
   },
   headerLeft: {
@@ -400,7 +447,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '600',
     color: 'white',
     marginLeft: 15,
@@ -450,18 +497,18 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   backIcon: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
     // tintColor: 'white',
   },
   settingIcon: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
     // tintColor: 'white',
   },
   helpIcon: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
     // tintColor: 'white',
   },
   profileIconImage: {
@@ -535,10 +582,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 15,
+    overflow: 'hidden',
   },
   progressText: {
     color: 'white',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
   },
   progressTextContainer: {
@@ -646,6 +694,14 @@ const styles = StyleSheet.create({
     paddingTop: 15,
   },
   smallCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  languageCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 15,
     padding: 15,
@@ -783,6 +839,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'white',
+  },
+  logoutButtonDisabled: {
+    opacity: 0.6,
   },
   logoutButtonText: {
     color: 'white',

@@ -11,6 +11,8 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
@@ -21,13 +23,16 @@ import {getCurrentUserInfo, getCurrentUserId} from '../../utils/tokenUtils';
 import chatApiService from '../../services/chatApiService';
 import SafeImage from '../../components/SafeImage';
 import ChatErrorBoundary from '../../components/ChatErrorBoundary';
+import {useTranslation} from 'react-i18next';
+
+const { height } = Dimensions.get('window');
+const isSmallScreen = height < 300;
+const topPadding = isSmallScreen ? 35 : 50;
 
 const ChatRoom = ({navigation, route}) => {
+  const {t} = useTranslation();
   const {userId, userName, userImage} = route.params || {};
   
-  console.log('ChatRoom params:', {userId, userName, userImage});
-  
-
   if (!userId) {
     console.error('ERROR: userId is missing from route params!');
   }
@@ -37,58 +42,86 @@ const ChatRoom = ({navigation, route}) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [conversationId, setConversationId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   useEffect(() => {
     initializeChat();
-  }, [userId]);
+    
+   
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => setKeyboardVisible(true)
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => setKeyboardVisible(false)
+    );
+
+
+    const pollingInterval = setInterval(() => {
+      if (conversationId) {
+        loadMessagesFromBackend(true); 
+      }
+    }, 1500);
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+      clearInterval(pollingInterval);
+    };
+  }, [userId, conversationId]);
 
   const initializeChat = async () => {
     try {
       setLoading(true);
       const token = await getAuthToken();
       if (!token) {
-        Alert.alert('Error', 'Please login again');
+        Alert.alert(t('auth.otp.error'), t('chatroom.please_login_again'));
         navigation.navigate('SignIn');
         return;
       }
 
-      // Get current user info - first try to get full profile from backend
+     
       let userInfo = await getCurrentUserInfo();
       
-      // If no avatar, try to fetch from profile API directly
+   
       if (!userInfo.avatar) {
         try {
           const profileResponse = await chatApiService.get(`/api/profile/user/${userInfo._id}`);
           if (profileResponse.success && profileResponse.user) {
             userInfo = {
               _id: (profileResponse.user._id || profileResponse.user.id)?.toString() || userInfo._id,
-              name: profileResponse.user.firstName || 'You',
+              name: profileResponse.user.firstName || t('chatroom.you'),
               avatar: profileResponse.user.photos?.[0]?.url || null
             };
           }
         } catch (error) {
-          console.log('Could not fetch profile:', error);
+      
         }
       }
       
       setCurrentUser(userInfo);
       
-      // Load messages from backend
+    
       await loadMessagesFromBackend();
     } catch (error) {
       console.error('Error initializing chat:', error);
-      Alert.alert('Error', 'Failed to load chat');
+      Alert.alert(t('auth.otp.error'), t('chatroom.failed_load_chat'));
     } finally {
       setLoading(false);
     }
   };
 
-  const loadMessagesFromBackend = async () => {
+  const loadMessagesFromBackend = async (silentRefresh = false) => {
     try {
       const token = await getAuthToken();
       if (!token || !userId) return;
 
-      // First, try to get existing conversation
+      
+      if (!silentRefresh) {
+       
+      }
+
       const conversationsResponse = await chatApiService.get('/api/chat/conversations');
 
       if (conversationsResponse && conversationsResponse.success) {
@@ -99,30 +132,49 @@ const ChatRoom = ({navigation, route}) => {
         if (existingConversation) {
           setConversationId(existingConversation.id);
           
-          // Load messages for this conversation
+          // Get messages
           const messagesResponse = await chatApiService.get(`/api/chat/messages/${existingConversation.id}`);
 
           if (messagesResponse && messagesResponse.success && messagesResponse.messages) {
-            const formattedMessages = messagesResponse.messages.map(msg => ({
-              _id: msg._id || Math.round(Math.random() * 1000000),
-              text: msg.content || '',
-              createdAt: new Date(msg.createdAt || Date.now()),
-              user: {
-                _id: msg.sender?._id?.toString() || 'unknown',
-                name: msg.sender?.firstName || 'Unknown User',
-                avatar: msg.sender?.photos?.[0]?.url || null
-              },
-              image: msg.mediaUrl ? `${chatApiService.baseURL}${msg.mediaUrl}` : null
-            }));
+            // Format messages
+            const formattedMessages = messagesResponse.messages.map(msg => {
+              
+              let imageUrl = null;
+              if (msg.mediaUrl) {
+                // Only accept Cloudinary URLs
+                if (msg.mediaUrl.startsWith('https://res.cloudinary.com/')) {
+                  imageUrl = msg.mediaUrl;
+                  console.log('Cloudinary image accepted:', msg.mediaUrl);
+                } else {
+                  console.log('Skipping local/non-Cloudinary image:', msg.mediaUrl);
+                }
+              }
+              
+              return {
+                _id: msg._id || Math.round(Math.random() * 1000000),
+                text: msg.content || '',
+                createdAt: new Date(msg.createdAt || Date.now()),
+                user: {
+                  _id: msg.sender?._id?.toString() || 'unknown',
+                  name: msg.sender?.firstName || t('chatroom.unknown_user'),
+                  avatar: msg.sender?.photos?.[0]?.url || null
+                },
+                image: imageUrl, 
+                type: msg.type || 'text'
+              };
+            });
             
-            setMessages(formattedMessages.reverse()); // Reverse to show latest at bottom
+            console.log('Formatted messages with Cloudinary images:', formattedMessages.filter(m => m.image).length);
+            setMessages(formattedMessages.reverse()); 
           }
         }
       }
     } catch (error) {
       console.error('Error loading messages from backend:', error);
-      // Fallback to local storage for offline support
-      await loadMessagesFromLocal();
+   
+      if (!silentRefresh) {
+        await loadMessagesFromLocal();
+      }
     }
   };
 
@@ -131,7 +183,7 @@ const ChatRoom = ({navigation, route}) => {
       const currentUserId = await getCurrentUserId();
       if (!currentUserId) return;
       
-      // Create user-specific conversation key
+     
       const userSpecificKey = `conversation_${currentUserId}_${userId}`;
       const savedMessages = await AsyncStorage.getItem(userSpecificKey);
       
@@ -148,11 +200,11 @@ const ChatRoom = ({navigation, route}) => {
       const currentUserId = await getCurrentUserId();
       if (!currentUserId) return;
       
-      // Create user-specific conversation key
+  
       const userSpecificKey = `conversation_${currentUserId}_${userId}`;
       await AsyncStorage.setItem(userSpecificKey, JSON.stringify(newMessages));
       
-      // Also update conversations list with user-specific key
+    
       await saveConversationInfo(newMessages[0], currentUserId);
     } catch (error) {
       console.error('Error saving messages locally:', error);
@@ -204,10 +256,10 @@ const ChatRoom = ({navigation, route}) => {
       setMessages(updatedMessages);
       setInputText('');
       
-      // Save to local storage as backup
+    
       await saveMessagesToLocal(updatedMessages);
       
-      // Send to backend
+    
       try {
         const token = await getAuthToken();
         if (token) {
@@ -221,10 +273,7 @@ const ChatRoom = ({navigation, route}) => {
           const response = await chatApiService.post('/api/chat/send-message', messageData);
 
           if (response.success) {
-            console.log('Message sent to backend successfully');
-            console.log('Backend message response:', response.message);
-            
-            // Update the message with backend data (includes proper sender info with photos)
+       
             if (response.message) {
               const updatedMessageFromBackend = {
                 _id: response.message._id || newMessage._id,
@@ -237,14 +286,11 @@ const ChatRoom = ({navigation, route}) => {
                 }
               };
               
-              // Replace the temporary message with backend message
-              const messagesWithBackendData = messages.map(msg => 
-                msg._id === newMessage._id ? updatedMessageFromBackend : msg
-              );
+          
               setMessages([updatedMessageFromBackend, ...messages]);
             }
             
-            // Update conversation ID if it was a new conversation
+        
             if (!conversationId && response.message.conversation) {
               setConversationId(response.message.conversation);
             }
@@ -254,19 +300,19 @@ const ChatRoom = ({navigation, route}) => {
         }
       } catch (error) {
         console.error('Error sending message to backend:', error);
-        // Message is already saved locally, so user can still see it
+      
       }
     }
   };
 
   const handleImagePicker = () => {
     Alert.alert(
-      'Select Image',
-      'Choose an option',
+      t('chatroom.select_image'),
+      t('chatroom.choose_option'),
       [
-        {text: 'Camera', onPress: openCamera},
-        {text: 'Gallery', onPress: openGallery},
-        {text: 'Cancel', style: 'cancel'},
+        {text: t('chatroom.camera'), onPress: openCamera},
+        {text: t('chatroom.gallery'), onPress: openGallery},
+        {text: t('firstname.cancel'), style: 'cancel'},
       ]
     );
   };
@@ -316,33 +362,103 @@ const ChatRoom = ({navigation, route}) => {
     try {
       const token = await getAuthToken();
       if (token) {
-        const formData = new FormData();
-        formData.append('file', {
-          uri: imageAsset.uri,
-          type: imageAsset.type,
-          name: imageAsset.fileName || 'image.jpg',
-        });
-        formData.append('type', 'image');
-        formData.append('recipientId', userId);
-        if (conversationId) {
-          formData.append('conversationId', conversationId);
-        }
+       
+        try {
+          const ReactNativeBlobUtil = require('react-native-blob-util').default;
+          
+          const uploadUrl = `${chatApiService.baseURL}api/chat/send-media`;
+          const token = await getAuthToken();
 
-        const response = await chatApiService.post('/api/chat/send-media', formData, {
-          headers: { 
-            'Content-Type': 'multipart/form-data'
+          const response = await ReactNativeBlobUtil.fetch(
+            'POST',
+            uploadUrl,
+            {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data',
+            },
+            [
+              {
+                name: 'file',
+                filename: imageAsset.fileName || `image_${Date.now()}.jpg`,
+                type: imageAsset.type || 'image/jpeg',
+                data: ReactNativeBlobUtil.wrap(imageAsset.uri),
+              },
+              {
+                name: 'type',
+                data: 'image',
+              },
+              {
+                name: 'recipientId',
+                data: userId,
+              },
+              ...(conversationId ? [{
+                name: 'conversationId',
+                data: conversationId,
+              }] : []),
+            ]
+          );
+
+          const responseData = response.json();
+
+          if (responseData.success) {
+            if (!conversationId && responseData.message.conversation) {
+              setConversationId(responseData.message.conversation);
+            }
+          } else {
+            throw new Error(responseData.message || 'Upload failed');
           }
-        });
+        } catch (blobError) {
+         
+          const uploadUrl = `${chatApiService.baseURL}api/chat/send-media`;
+          const token = await getAuthToken();
+          
+        
+          const uploadFormData = new FormData();
+          
+        
+          const fileData = {
+            uri: imageAsset.uri,
+            type: imageAsset.type || 'image/jpeg',
+            name: imageAsset.fileName || `image_${Date.now()}.jpg`,
+          };
+          
+          uploadFormData.append('file', fileData);
+          uploadFormData.append('type', 'image');
+          uploadFormData.append('recipientId', userId);
+          if (conversationId) {
+            uploadFormData.append('conversationId', conversationId);
+          }
 
-        if (response.success) {
-          console.log('Image sent to backend successfully');
-          if (!conversationId && response.message.conversation) {
-            setConversationId(response.message.conversation);
+          const uploadResponse = await fetch(uploadUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              // Don't set Content-Type for FormData, let fetch handle it
+            },
+            body: uploadFormData,
+          });
+          
+          if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            throw new Error(`HTTP ${uploadResponse.status}: ${errorText}`);
+          }
+          
+          const responseData = await uploadResponse.json();
+
+          if (responseData.success) {
+            if (!conversationId && responseData.message.conversation) {
+              setConversationId(responseData.message.conversation);
+            }
+          } else {
+            throw new Error(responseData.message || 'Upload failed');
           }
         }
       }
     } catch (error) {
-      console.error('Error sending image to backend:', error);
+      Alert.alert(
+        t('auth.otp.error'),
+        t('chatroom.failed_send_image') || 'Failed to send image. Please check your connection.'
+      );
     }
   };
 
@@ -387,6 +503,16 @@ const ChatRoom = ({navigation, route}) => {
     
     // Convert both IDs to strings for comparison
     const isMyMessage = item.user._id?.toString() === currentUser._id?.toString();
+    
+    // Debug image rendering
+    if (item.image) {
+      console.log('🖼️ Rendering message with image:', {
+        messageId: item._id,
+        imageUrl: item.image,
+        type: item.type,
+        text: item.text
+      });
+    }
     
     return (
       <View style={[
@@ -450,13 +576,17 @@ const ChatRoom = ({navigation, route}) => {
           
           <TextInput
             style={styles.textInput}
-            placeholder="Message"
+            placeholder={t('chatroom.message')}
             placeholderTextColor="#FFFFFF60"
             value={inputText}
             onChangeText={setInputText}
             multiline
             maxLength={1000}
-            onSubmitEditing={onSend}
+            onSubmitEditing={() => {
+              Keyboard.dismiss();
+              onSend();
+            }}
+            blurOnSubmit={false}
             returnKeyType="send"
           />
           
@@ -479,7 +609,8 @@ const ChatRoom = ({navigation, route}) => {
       <KeyboardAvoidingView 
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        enabled={keyboardVisible}
       >
         <LinearGradient colors={['#5D1F3A', '#38152C', '#070A1A']} style={styles.container}>
           <StatusBar barStyle="light-content" backgroundColor="#5D1F3A" />
@@ -512,8 +643,8 @@ const ChatRoom = ({navigation, route}) => {
                 style={styles.userAvatar}
               />
               <View>
-                <Text style={styles.userName}>{userName || 'User'}</Text>
-                <Text style={styles.userStatus}>Online</Text>
+                <Text style={styles.userName}>{userName || t('chatroom.user')}</Text>
+                <Text style={styles.userStatus}>{t('chatroom.online')}</Text>
               </View>
             </TouchableOpacity>
             
@@ -523,19 +654,19 @@ const ChatRoom = ({navigation, route}) => {
         
           <View style={styles.todayContainer}>
             <View style={styles.todayBadge}>
-              <Text style={styles.todayText}>Today</Text>
+              <Text style={styles.todayText}>{t('chatroom.today')}</Text>
             </View>
           </View>
 
         
           {loading ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>Loading messages...</Text>
+              <Text style={styles.emptyText}>{t('chatroom.loading_messages')}</Text>
             </View>
           ) : messages.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>Start your conversation with {userName || 'User'}</Text>
-              <Text style={styles.emptySubText}>Say hello! 👋</Text>
+              <Text style={styles.emptyText}>{t('chatroom.start_conversation')} {userName || t('chatroom.user')}</Text>
+              <Text style={styles.emptySubText}>{t('chatroom.say_hello')}</Text>
             </View>
           ) : (
             <FlatList
@@ -546,6 +677,8 @@ const ChatRoom = ({navigation, route}) => {
               contentContainerStyle={styles.messagesContainer}
               inverted
               showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
             />
           )}
 
@@ -566,7 +699,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: topPadding,
     paddingBottom: 15,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.1)',
@@ -718,7 +851,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.3)',
     paddingHorizontal: 15,
     paddingVertical: 12,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 12,
   },
   inputRow: {
     flexDirection: 'row',

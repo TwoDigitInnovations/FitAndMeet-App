@@ -25,7 +25,7 @@ const CameraGalleryPicker = (props) => {
     maxWidth: props?.width || 300,
     maxHeight: props?.height || 300,
     quality: props?.quality || 1,
-    includeBase64: props.base64,
+    includeBase64: props.base64 || false,
   };
 
   const launchCameras = async () => {

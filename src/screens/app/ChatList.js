@@ -8,6 +8,7 @@ import {
   Image,
   TextInput,
   StatusBar,
+  Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
@@ -17,8 +18,14 @@ import {getAuthToken} from '../../utils/storage';
 import {getCurrentUserId} from '../../utils/tokenUtils';
 import {migrateChatDataToUserSpecific} from '../../utils/chatCleanup';
 import SafeImage from '../../components/SafeImage';
+import {useTranslation} from 'react-i18next';
+
+const { height } = Dimensions.get('window');
+const isSmallScreen = height < 700;
+const topPadding = isSmallScreen ? 30 : 40;
 
 const ChatList = ({navigation}) => {
+  const {t} = useTranslation();
   const [chats, setChats] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -42,11 +49,11 @@ const ChatList = ({navigation}) => {
         return;
       }
       
-      // Get current user ID from token
+     
       const userId = await getCurrentUserId();
       setCurrentUserId(userId);
       
-      // Migrate old chat data to user-specific format
+   
       await migrateChatDataToUserSpecific();
       
       await loadConversations();
@@ -64,7 +71,7 @@ const ChatList = ({navigation}) => {
       const token = await getAuthToken();
       if (!token) return;
 
-      // First try to load from backend
+   
       try {
         const response = await chatApiService.get('/api/chat/conversations');
 
@@ -77,7 +84,7 @@ const ChatList = ({navigation}) => {
         console.error('Backend error, falling back to local storage:', backendError);
       }
 
-      // Fallback to local storage with user-specific key
+    
       const userId = currentUserId || await getCurrentUserId() || 'unknown';
       const userSpecificConversationsKey = `all_conversations_${userId}`;
       const savedConversations = await AsyncStorage.getItem(userSpecificConversationsKey);
@@ -121,7 +128,7 @@ const ChatList = ({navigation}) => {
     const diffInHours = (now - date) / (1000 * 60 * 60);
     
     if (diffInHours < 1) {
-      return 'Just now';
+      return t('chatlist.just_now');
     } else if (diffInHours < 24) {
       return date.toLocaleTimeString('en-US', {
         hour: 'numeric',
@@ -163,7 +170,7 @@ const ChatList = ({navigation}) => {
         
         <View style={styles.messageRow}>
           <Text style={styles.lastMessage} numberOfLines={1}>
-            {item.lastMessage?.text || item.lastMessage?.content || 'Start a conversation...'}
+            {item.lastMessage?.text || item.lastMessage?.content || t('chatlist.start_conversation')}
           </Text>
           {item.unreadCount > 0 && (
             <View style={styles.unreadBadge}>
@@ -197,7 +204,7 @@ const ChatList = ({navigation}) => {
                     />
         </TouchableOpacity>
         
-        <Text style={styles.headerTitle}>Messages</Text>
+        <Text style={styles.headerTitle}>{t('chatlist.messages')}</Text>
         
         <View style={styles.headerRight} />
       </View>
@@ -208,7 +215,7 @@ const ChatList = ({navigation}) => {
           <Search size={20} color="#FFFFFF" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search"
+            placeholder={t('chatlist.search')}
             placeholderTextColor="#FFFFFF80"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -221,16 +228,16 @@ const ChatList = ({navigation}) => {
 
    
       <View style={styles.chatsSection}>
-        <Text style={styles.sectionTitle}>Chats</Text>
+        <Text style={styles.sectionTitle}>{t('chatlist.chats')}</Text>
         
         {loading ? (
           <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading chats...</Text>
+            <Text style={styles.loadingText}>{t('chatlist.loading_chats')}</Text>
           </View>
         ) : filteredChats.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No conversations yet</Text>
-            <Text style={styles.emptySubText}>Start matching to begin chatting!</Text>
+            <Text style={styles.emptyText}>{t('chatlist.no_conversations')}</Text>
+            <Text style={styles.emptySubText}>{t('chatlist.start_matching')}</Text>
           </View>
         ) : (
           <FlatList
@@ -255,7 +262,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: topPadding,
     paddingBottom: 20,
   },
   backButton: {

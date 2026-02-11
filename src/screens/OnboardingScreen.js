@@ -6,9 +6,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Dimensions,
 } from 'react-native';
 import {useTranslation} from 'react-i18next';
 import LanguageSelector from '../components/LanguageSelector';
+
+const { height } = Dimensions.get('window');
+const isSmallScreen = height < 700;
+const topPadding = isSmallScreen ? 35 : 50;
 
 const onboardingData = [
   {
@@ -108,7 +113,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 50,
+    paddingTop: topPadding,
     paddingHorizontal: 20,
     paddingBottom: 10,
   },

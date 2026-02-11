@@ -8,8 +8,11 @@ import {
   Image,
   ImageBackground,
 } from 'react-native';
+import {useTranslation} from 'react-i18next';
 
 const RegistrationSuccess = ({navigation}) => {
+  const {t} = useTranslation();
+  
   const handleDone = () => {
     
     navigation.reset({
@@ -31,7 +34,7 @@ const RegistrationSuccess = ({navigation}) => {
 
       <View style={styles.overlay}>
         <View style={styles.card}>
-          <Text style={styles.title}>Completed</Text>
+          <Text style={styles.title}>{t('registrationsuccess.title')}</Text>
 
           <View style={styles.checkContainer}>
             <Image
@@ -42,11 +45,11 @@ const RegistrationSuccess = ({navigation}) => {
           </View>
 
           <Text style={styles.subtitle}>
-            Successfully Completed With{'\n'}Pre-Register Profile
+            {t('registrationsuccess.subtitle')}
           </Text>
 
           <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
-            <Text style={styles.doneButtonText}>Done</Text>
+            <Text style={styles.doneButtonText}>{t('registrationsuccess.done_button')}</Text>
           </TouchableOpacity>
         </View>
       </View>

@@ -205,13 +205,16 @@ const SignIn = ({navigation}) => {
 
        
         if (response.user.profileCompleted) {
-         
+          // Profile is complete, set authentication state
           if (handleLoginSuccess) {
-           
             handleLoginSuccess(response.user);
           }
           
-       
+          // Small delay to ensure state is updated, then navigate
+          setTimeout(() => {
+            // Navigation will happen automatically when isAuthenticated changes
+            // The AppNavigate will check profileCompleted flag and go to TabNav
+          }, 100);
         } else {
          
           const nextScreen = registrationData?.nextScreen || response.nextScreen || 'SelectGym';
@@ -447,7 +450,7 @@ const SignIn = ({navigation}) => {
                 </TouchableOpacity>
                 <TextInput
                   style={styles.phoneInput}
-                  placeholder={t('auth.signin.phone_placeholder', {length: phoneLength})}
+                  placeholder={t('auth.signin.phone_placeholder')}
                   placeholderTextColor="#A0A0A0"
                   keyboardType="phone-pad"
                   value={phoneNumber}

@@ -8,26 +8,29 @@ import {
   Dimensions,
 } from 'react-native';
 import {useTranslation} from 'react-i18next';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const {width, height} = Dimensions.get('window');
 
+// Static language definitions to avoid flickering during language switch
+const LANGUAGES = [
+  {code: 'en', name: 'English', flag: '🇺🇸'},
+  {code: 'fr', name: 'Français', flag: '🇫🇷'},
+];
+
 const LanguageSelector = () => {
-  const {t, i18n} = useTranslation();
+  const {t} = useTranslation();
+  const { currentLanguage, switchLanguage } = useLanguage();
   const [modalVisible, setModalVisible] = useState(false);
 
-  const languages = [
-    {code: 'en', name: t('common.english'), flag: '🇺🇸'},
-    {code: 'fr', name: t('common.french'), flag: '🇫🇷'},
-  ];
-
-  const changeLanguage = (languageCode) => {
-    i18n.changeLanguage(languageCode);
+  const changeLanguage = async (languageCode) => {
     setModalVisible(false);
+    await switchLanguage(languageCode);
   };
 
   const getCurrentLanguage = () => {
-    const currentLang = languages.find(lang => lang.code === i18n.language);
-    return currentLang || languages[0];
+    const currentLang = LANGUAGES.find(lang => lang.code === currentLanguage);
+    return currentLang || LANGUAGES[1]; // Default to French
   };
 
   return (
@@ -36,7 +39,7 @@ const LanguageSelector = () => {
         style={styles.languageButton}
         onPress={() => setModalVisible(true)}>
         <Text style={styles.languageButtonText}>
-          {getCurrentLanguage().flag} {t('common.language')}
+          {getCurrentLanguage().flag} {getCurrentLanguage().name}
         </Text>
       </TouchableOpacity>
 
@@ -49,19 +52,19 @@ const LanguageSelector = () => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{t('common.language')}</Text>
             
-            {languages.map((language) => (
+            {LANGUAGES.map((language) => (
               <TouchableOpacity
                 key={language.code}
                 style={[
                   styles.languageOption,
-                  i18n.language === language.code && styles.selectedLanguage,
+                  currentLanguage === language.code && styles.selectedLanguage,
                 ]}
                 onPress={() => changeLanguage(language.code)}>
                 <Text style={styles.flagText}>{language.flag}</Text>
                 <Text
                   style={[
                     styles.languageText,
-                    i18n.language === language.code && styles.selectedLanguageText,
+                    currentLanguage === language.code && styles.selectedLanguageText,
                   ]}>
                   {language.name}
                 </Text>
