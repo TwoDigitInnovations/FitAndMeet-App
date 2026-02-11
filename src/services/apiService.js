@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getAuthToken, deleteAuthToken } from '../utils/storage';
 import Constants from '../utils/Constant';
 import NetInfo from '@react-native-community/netinfo';
-import {Platform} from 'react-native';
+import { Platform } from 'react-native';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 
 const ConnectionCheck = {
@@ -31,7 +31,7 @@ const GetApi = async (url, props, data) => {
           const token = await getAuthToken();
           console.log('API URL:', Constants.baseUrl + url);
           console.log('Token:', `Bearer ${token}`);
-          
+
           axios
             .get(Constants.baseUrl + url, {
               headers: {
@@ -76,7 +76,7 @@ const GetApi2 = async (url, props, data) => {
           const token = await getAuthToken();
           console.log('API URL:', Constants.baseUrl + url);
           console.log('Token:', `Bearer ${token}`);
-          
+
           axios
             .get(Constants.baseUrl + url, {
               headers: {
@@ -122,7 +122,7 @@ const Post = async (url, data, props) => {
           console.log('API URL:', Constants.baseUrl + url);
           console.log('Token:', `Bearer ${token}`);
           console.log('Data:', data);
-          
+
           axios
             .post(Constants.baseUrl + url, data, {
               headers: {
@@ -164,7 +164,7 @@ const PostPublic = async (url, data) => {
         if (connected) {
           console.log('API URL:', Constants.baseUrl + url);
           console.log('Data:', data);
-          
+
           axios
             .post(Constants.baseUrl + url, data)
             .then(res => {
@@ -194,7 +194,7 @@ const PostWithFile = async (url, formData) => {
   return new Promise(async (resolve, reject) => {
     try {
       const connected = await ConnectionCheck.isConnected();
-      
+
       if (!connected) {
         reject('No internet connection');
         return;
@@ -237,7 +237,7 @@ const Put = async (url, data, props) => {
           const token = await getAuthToken();
           console.log('API URL:', Constants.baseUrl + url);
           console.log('Token:', `Bearer ${token}`);
-          
+
           axios
             .put(Constants.baseUrl + url, data, {
               headers: {
@@ -280,7 +280,7 @@ const Patch = async (url, data, props) => {
           const token = await getAuthToken();
           console.log('API URL:', Constants.baseUrl + url);
           console.log('Token:', `Bearer ${token}`);
-          
+
           axios
             .patch(Constants.baseUrl + url, data, {
               headers: {
@@ -323,7 +323,7 @@ const Delete = async (url, data, props) => {
           const token = await getAuthToken();
           console.log('API URL:', Constants.baseUrl + url);
           console.log('Token:', `Bearer ${token}`);
-          
+
           axios
             .delete(Constants.baseUrl + url, {
               headers: {
@@ -361,7 +361,7 @@ const UploadFile = async (fileUri, fileName, fileType) => {
   return new Promise(async (resolve, reject) => {
     try {
       const connected = await ConnectionCheck.isConnected();
-      
+
       if (!connected) {
         reject('No internet connection');
         return;
@@ -377,7 +377,9 @@ const UploadFile = async (fileUri, fileName, fileType) => {
       if (Platform.OS === 'android' && filePath.startsWith('file://')) {
         filePath = filePath.replace('file://', '');
       }
+      console.log(filePath
 
+      )
       try {
         const response = await ReactNativeBlobUtil.fetch(
           'POST',
@@ -399,7 +401,7 @@ const UploadFile = async (fileUri, fileName, fileType) => {
         console.log('Upload response:', response.data);
 
         const responseData = JSON.parse(response.data);
-        
+
         if (response.info().status === 200) {
           resolve(responseData);
         } else {

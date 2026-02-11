@@ -1,4 +1,4 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   StatusBar,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import apiService from '../../services/apiService';
 import LinearGradient from 'react-native-linear-gradient';
@@ -18,10 +19,11 @@ import {
   Bell,
 } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const {width, height} = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-const Home = ({navigation}) => {
+const Home = ({ navigation }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,14 +31,15 @@ const Home = ({navigation}) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [likedProfiles, setLikedProfiles] = useState(new Set());
   const scrollViewRef = useRef(null);
+  const insets = useSafeAreaInsets();
 
-  
+
   useEffect(() => {
     fetchPotentialMatches();
     getCurrentUser();
   }, []);
 
-  
+
   useFocusEffect(
     React.useCallback(() => {
       fetchLikedProfiles();
@@ -46,7 +49,7 @@ const Home = ({navigation}) => {
   const fetchLikedProfiles = async () => {
     try {
       const response = await apiService.GetApi('api/match/liked-profiles');
-      
+
       if (response.success) {
         const likedProfileIds = new Set(
           response.likedProfiles.map(profile => profile.id)
@@ -57,10 +60,10 @@ const Home = ({navigation}) => {
         console.log('No liked profiles found or API error');
       }
     } catch (error) {
-    
+
       if (error?.status === 401) {
         console.log('Auth error - user may need to login again');
-        setLikedProfiles(new Set()); 
+        setLikedProfiles(new Set());
       } else {
         console.error('Error fetching liked profiles:', error);
       }
@@ -70,7 +73,7 @@ const Home = ({navigation}) => {
   const getCurrentUser = async () => {
     try {
       const response = await apiService.GetApi('api/auth/profile');
-      console.log("test",response)
+      console.log("test", response)
       if (response.success) {
         setCurrentUser(response.user);
       }
@@ -82,7 +85,7 @@ const Home = ({navigation}) => {
   const fetchPotentialMatches = async () => {
     try {
       const response = await apiService.GetApi('api/match/potential-matches');
-      
+
       if (response.success) {
         setProfiles(response.matches || []);
       } else {
@@ -113,7 +116,7 @@ const Home = ({navigation}) => {
   const handlePass = () => {
     const profile = profiles[currentIndex];
     if (!profile) return;
-    
+
     // If heart is active (liked), remove the like
     if (likedProfiles.has(profile.id)) {
       setLikedProfiles(prev => {
@@ -121,7 +124,7 @@ const Home = ({navigation}) => {
         newSet.delete(profile.id);
         return newSet;
       });
-      
+
       // Call API to unlike
       apiService.Delete(`api/match/unlike/${profile.id}`)
         .then(response => {
@@ -133,15 +136,15 @@ const Home = ({navigation}) => {
           console.error('Error unliking profile:', error);
         });
     }
-    
+
     console.log('Passed profile:', profile.name);
   };
 
   const handleHeartToggle = async (profileId) => {
     if (heartLoading) return; // Prevent multiple clicks
-    
+
     const profile = profiles.find(p => p.id === profileId);
-    
+
     setLikedProfiles(prev => {
       const newSet = new Set(prev);
       if (newSet.has(profileId)) {
@@ -174,9 +177,9 @@ const Home = ({navigation}) => {
       const response = await apiService.Post('api/match/like', {
         likedUserId: profile.id
       });
-      
+
       console.log('Like API response:', response);
-      
+
       if (response.success) {
         if (response.isMatch) {
           console.log('Real match found! Navigating to MatchScreen');
@@ -211,9 +214,9 @@ const Home = ({navigation}) => {
     }
   };
 
-  const ProfileCard = ({profile}) => (
+  const ProfileCard = ({ profile }) => (
     <View style={styles.cardContainer}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.profileImageContainer}
         onPress={() => {
           console.log('Home - Navigating to ProfileDetails with profile:', JSON.stringify(profile, null, 2));
@@ -221,18 +224,18 @@ const Home = ({navigation}) => {
         }}
         activeOpacity={0.9}
       >
-        <Image 
+        <Image
           source={
-            (profile.photos && profile.photos.length > 0) 
-              ? {uri: profile.photos[0].url}
-              : profile.image 
-                ? {uri: profile.image}
+            (profile.photos && profile.photos.length > 0)
+              ? { uri: profile.photos[0].url }
+              : profile.image
+                ? { uri: profile.image }
                 : require('../../Assets/images/layout.png')
-          } 
-          style={styles.profileImage} 
+          }
+          style={styles.profileImage}
         />
       </TouchableOpacity>
-      
+
       <View style={styles.topProfileOverlay}>
         <View style={styles.profileHeader}>
           <View style={styles.nameSection}>
@@ -247,11 +250,11 @@ const Home = ({navigation}) => {
               )} */}
             </View>
           </View>
-          
+
           <View style={styles.motivateSection}>
             <View style={styles.motivateButton}>
-              <Image 
-                source={require('../../Assets/images/motivate.png')} 
+              <Image
+                source={require('../../Assets/images/motivate.png')}
                 style={styles.motivateImage}
                 resizeMode="contain"
               />
@@ -267,24 +270,24 @@ const Home = ({navigation}) => {
         </View>
       </View>
 
-      
-      <TouchableOpacity 
-        style={styles.heartIcon} 
+
+      <TouchableOpacity
+        style={styles.heartIcon}
         onPress={() => handleHeartToggle(profile.id)}
       >
-        <Image 
-          source={likedProfiles.has(profile.id) 
+        <Image
+          source={likedProfiles.has(profile.id)
             ? require('../../Assets/images/activeH.png')
             : require('../../Assets/images/inactiveH.png')
-          } 
+          }
           style={styles.heartImage}
           resizeMode="contain"
         />
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.closeButton} onPress={handlePass}>
-        <Image 
-          source={require('../../Assets/images/skip.png')} 
+        <Image
+          source={require('../../Assets/images/skip.png')}
           style={styles.skipImage}
           resizeMode="contain"
         />
@@ -292,8 +295,8 @@ const Home = ({navigation}) => {
 
       <View style={styles.layoutImageContainer}>
         <View style={styles.layoutImageWrapper}>
-          <Image 
-            source={require('../../Assets/images/layout.png')} 
+          <Image
+            source={require('../../Assets/images/layout.png')}
             style={styles.layoutImage}
             resizeMode="cover"
             onError={(error) => console.log('Image load error:', error)}
@@ -308,8 +311,8 @@ const Home = ({navigation}) => {
         <View style={styles.bottomInfo}>
           <View style={styles.gymSectionHorizontal}>
             <View style={styles.genderSection}>
-              <Image 
-                source={require('../../Assets/images/gender.png')} 
+              <Image
+                source={require('../../Assets/images/gender.png')}
                 style={styles.genderImage}
                 resizeMode="contain"
               />
@@ -318,18 +321,18 @@ const Home = ({navigation}) => {
               </Text>
             </View>
             <View style={styles.gymRowHorizontal}>
-              <Image 
-                source={require('../../Assets/images/rays.png')} 
+              <Image
+                source={require('../../Assets/images/rays.png')}
                 style={styles.raysImage}
                 resizeMode="contain"
               />
               <Text style={styles.gymName}>
-                {profile.activities && profile.activities.length > 0 
-                  ? profile.activities[0] 
+                {profile.activities && profile.activities.length > 0
+                  ? profile.activities[0]
                   : 'Fitness'}
               </Text>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.purposeIcon}
               onPress={() => navigation.navigate('ChatRoom', {
                 userId: profile.id,
@@ -337,21 +340,21 @@ const Home = ({navigation}) => {
                 userImage: profile.image
               })}
             >
-              <Image 
-                source={require('../../Assets/images/mess.png')} 
+              <Image
+                source={require('../../Assets/images/mess.png')}
                 style={styles.purposeIconImage}
                 resizeMode="contain"
               />
             </TouchableOpacity>
           </View>
-          
+
           <Text style={styles.purposeText}>Purpose</Text>
 
           <View style={styles.activitiesContainer}>
             {profile.activities && profile.activities.length > 1 && (
               <View style={styles.activityTag}>
-                <Image 
-                  source={require('../../Assets/images/confirm.png')} 
+                <Image
+                  source={require('../../Assets/images/confirm.png')}
                   style={styles.activityIcon}
                   resizeMode="contain"
                 />
@@ -360,8 +363,8 @@ const Home = ({navigation}) => {
             )}
             {profile.activities && profile.activities.length > 2 && (
               <View style={styles.activityTag}>
-                <Image 
-                  source={require('../../Assets/images/confirm.png')} 
+                <Image
+                  source={require('../../Assets/images/confirm.png')}
                   style={styles.activityIcon}
                   resizeMode="contain"
                 />
@@ -376,17 +379,17 @@ const Home = ({navigation}) => {
 
   return (
     <LinearGradient colors={['#5D1F3A', '#38152C', '#070A1A']} style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#5D1F3A" />
-      
-      <View style={styles.topProfileSection}>
-        <TouchableOpacity 
+      {/* <StatusBar barStyle="light-content" backgroundColor="#5D1F3A" translucent={false} /> */}
+
+      <View style={[styles.topProfileSection, { paddingTop: Platform.OS === 'android' && insets.top + 10 }]}>
+        <TouchableOpacity
           style={styles.topUserInfo}
           onPress={() => navigation.navigate('Profile')}
         >
           <Image
-            source={currentUser?.photos?.[0]?.url ? 
-              {uri: currentUser.photos[0].url} : 
-              {uri: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80'}
+            source={currentUser?.photos?.[0]?.url ?
+              { uri: currentUser.photos[0].url } :
+              { uri: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&q=80' }
             }
             style={styles.topAvatar}
           />
@@ -395,14 +398,14 @@ const Home = ({navigation}) => {
             <Text style={styles.welcomeText}>Welcome 👋</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.settingsButton}
           onPress={() => navigation.navigate('Likes')}
         >
           <View style={styles.settingsIcon}>
-            <Bell 
-              size={20} 
-              color="#000000" 
+            <Bell
+              size={20}
+              color="#000000"
               strokeWidth={2}
             />
           </View>
@@ -417,8 +420,8 @@ const Home = ({navigation}) => {
         <View style={styles.noMatchesContainer}>
           <Text style={styles.noMatchesText}>No matches found</Text>
           <Text style={styles.noMatchesSubText}>Check back later for new profiles</Text>
-          <TouchableOpacity 
-            style={styles.refreshButton} 
+          <TouchableOpacity
+            style={styles.refreshButton}
             onPress={() => {
               setLoading(true);
               fetchPotentialMatches();
@@ -436,7 +439,7 @@ const Home = ({navigation}) => {
           showsVerticalScrollIndicator={false}
           onScroll={handleScroll}
           scrollEventThrottle={16}
-          snapToInterval={height - 180} 
+          snapToInterval={height - 180}
           decelerationRate="fast">
           {profiles.map((profile, index) => (
             <View key={profile.id} style={[
@@ -483,7 +486,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    // paddingTop: 50,
     paddingBottom: 20,
   },
   topUserInfo: {
@@ -680,7 +683,7 @@ const styles = StyleSheet.create({
     marginLeft: 20,
   },
   purposeIcon: {
-  
+
     borderRadius: 15,
     width: 30,
     height: 30,
@@ -716,7 +719,7 @@ const styles = StyleSheet.create({
   purposeText: {
     color: '#FFFFFF',
     fontSize: 14,
-   fontWeight:'bold'
+    fontWeight: 'bold'
   },
   profileInfo: {
     marginBottom: 20,
@@ -785,14 +788,14 @@ const styles = StyleSheet.create({
   gymName: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight:'bold'
-  
+    fontWeight: 'bold'
+
   },
   activitiesContainer: {
     flexDirection: 'column',
     gap: 8,
-    marginTop:8
-    
+    marginTop: 8
+
   },
   activityTag: {
     backgroundColor: '#010918',
@@ -837,7 +840,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 20,
     top: '50%',
-    transform: [{translateY: -50}],
+    transform: [{ translateY: -50 }],
     flexDirection: 'column',
     gap: 8,
   },

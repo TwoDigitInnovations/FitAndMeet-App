@@ -19,7 +19,7 @@ const ProfileDetails = ({ navigation, route }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   const passedProfile = route?.params?.profile;
 
   useEffect(() => {
@@ -41,7 +41,7 @@ const ProfileDetails = ({ navigation, route }) => {
     try {
       setLoading(true);
       const response = await apiService.GetApi(`api/profile/user/${userId}`);
-      console.log("profile",response)
+      console.log("profile", response)
       if (response.success) {
         setProfileData(formatProfileData(response.user));
       } else {
@@ -60,20 +60,20 @@ const ProfileDetails = ({ navigation, route }) => {
 
   const formatProfileData = (profile) => {
     if (!profile) return null;
-    
+
     return {
       name: profile?.name || profile?.firstName || 'John',
       age: profile?.age || 28,
       isVerified: profile?.verified || profile?.isPhoneVerified || true,
-      images: profile?.photos && profile.photos.length > 0 
-        ? profile.photos.map(photo => photo.url) 
-        : profile?.image 
+      images: profile?.photos && profile.photos.length > 0
+        ? profile.photos.map(photo => photo.url)
+        : profile?.image
           ? [profile.image]
           : [
-              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80',
-              'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80',
-              'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80',
-            ],
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80',
+            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80',
+            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80',
+          ],
       experience: '5+ Years',
       clientsTrained: '200+',
       location: profile?.gym || profile?.gymName || profile?.distance || 'Fit Pro Gym',
@@ -101,8 +101,8 @@ const ProfileDetails = ({ navigation, route }) => {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Profile not found</Text>
-        <TouchableOpacity 
-          style={styles.backButton} 
+        <TouchableOpacity
+          style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Text style={styles.backButtonText}>Go Back</Text>
@@ -115,11 +115,11 @@ const ProfileDetails = ({ navigation, route }) => {
     if (!profileData?.images || profileData.images.length <= 1) {
       return;
     }
-    
+
     const { locationX } = event.nativeEvent;
     const imageWidth = width;
     const totalImages = profileData.images.length;
-    
+
     if (locationX < imageWidth / 2) {
       // Left side - previous image (go backwards)
       setCurrentImageIndex(prev => {
@@ -140,7 +140,7 @@ const ProfileDetails = ({ navigation, route }) => {
     if (!profileData?.images || profileData.images.length <= 1) {
       return null;
     }
-    
+
     return (
       <View style={styles.dotsContainer}>
         {profileData.images.map((_, index) => (
@@ -166,11 +166,11 @@ const ProfileDetails = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
-     
-    
+
+
+
       <View style={styles.imageContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.imageTouch}
           onPress={handleImagePress}
           activeOpacity={1}
@@ -182,176 +182,185 @@ const ProfileDetails = ({ navigation, route }) => {
           />
         </TouchableOpacity>
       </View>
-      
+
       {/* Dots positioned at the bottom edge of image */}
       {renderImageDots()}
-      
-   
+
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Image
+          source={require('../../Assets/images/backicon.png')}
+          style={styles.backIcon}
+        />
+      </TouchableOpacity>
+
       <LinearGradient
         colors={['#571D38', '#31132A', '#0A0B1B', '#000000']}
         locations={[0, 0.4, 0.9, 1]}
         style={styles.contentContainer}
       >
-          <ScrollView 
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-           
-            <View style={styles.nameSection}>
-              <View style={styles.nameContainer}>
-                <Text style={styles.name}>{profileData.name}, {profileData.age}</Text>
-                {profileData.isVerified && (
-                  <Image 
-                    source={require('../../Assets/images/veri.png')} 
-                    style={styles.verifiedIcon}
-                  />
-                )}
-              </View>
-            </View>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
 
-         
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Image 
-                  source={require('../../Assets/images/star.png')} 
-                  style={styles.statIcon}
+          <View style={styles.nameSection}>
+            <View style={styles.nameContainer}>
+              <Text style={styles.name}>{profileData.name}, {profileData.age}</Text>
+              {profileData.isVerified && (
+                <Image
+                  source={require('../../Assets/images/veri.png')}
+                  style={styles.verifiedIcon}
                 />
-                <View>
-                  <Text style={styles.statLabel}>Experience</Text>
-                  <Text style={styles.statValue}>{profileData.experience}</Text>
-                </View>
-              </View>
-              
-              <View style={styles.statItem}>
-                <Image 
-                  source={require('../../Assets/images/profileicon.png')} 
-                  style={styles.statIcon}
-                />
-                <View>
-                  <Text style={styles.statLabel}>Clients Trained</Text>
-                  <Text style={styles.statValue}>{profileData.clientsTrained}</Text>
-                </View>
-              </View>
-              
-              <View style={styles.statItem}>
-                <Image 
-                  source={require('../../Assets/images/veri.png')} 
-                  style={styles.statIcon}
-                />
-                <View style={styles.locationTextContainer}>
-                  <Text style={styles.statLabel}>Location</Text>
-                  <Text style={styles.statValue} numberOfLines={2}>{profileData.location}</Text>
-                </View>
-              </View>
+              )}
             </View>
-
-         
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>About</Text>
-              <Text style={styles.aboutText}>{profileData.about}</Text>
-            </View>
-
-       
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Looking For</Text>
-              <Text style={styles.lookingForText}>{profileData.lookingFor}</Text>
-            </View>
-
-       
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Interests</Text>
-              <View style={styles.tagsContainer}>
-                {profileData.interests && profileData.interests.map((interest, index) => {
-                  let iconSource;
-                  const lowerInterest = interest.toLowerCase();
-                  
-                  if (lowerInterest.includes('gym')) {
-                    iconSource = require('../../Assets/images/gymicon.png');
-                  } else if (lowerInterest.includes('sports')) {
-                    iconSource = require('../../Assets/images/sportsicon.png');
-                  } else if (lowerInterest.includes('dance')) {
-                    iconSource = require('../../Assets/images/danceicon.png');
-                  } else if (lowerInterest.includes('adventure') || lowerInterest.includes('outdoor')) {
-                    iconSource = require('../../Assets/images/advantureicon.png');
-                  } else {
-                    iconSource = require('../../Assets/images/star.png');
-                  }
-                  
-                  return (
-                    <View key={index} style={styles.interestTag}>
-                      <Image 
-                        source={iconSource} 
-                        style={styles.interestIcon}
-                      />
-                      <Text style={styles.interestText}>{interest}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-
-         
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Specializations</Text>
-              <View style={styles.tagsContainer}>
-                {profileData.specializations && profileData.specializations.map((spec, index) => {
-                  let iconSource;
-                  const lowerSpec = spec.toLowerCase();
-                  
-                  if (lowerSpec.includes('personal training')) {
-                    iconSource = require('../../Assets/images/gymicon.png');
-                  } else if (lowerSpec.includes('functional training')) {
-                    iconSource = require('../../Assets/images/gymdance.png');
-                  } else if (lowerSpec.includes('cardio fitness')) {
-                    iconSource = require('../../Assets/images/hline.png');
-                  } else {
-                    iconSource = require('../../Assets/images/veri.png');
-                  }
-                  
-                  return (
-                    <View key={index} style={styles.specializationTag}>
-                      <Image 
-                        source={iconSource} 
-                        style={styles.specializationIcon}
-                      />
-                      <Text style={styles.specializationText}>{spec}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-
-            <View style={styles.bottomSpacing} />
-          </ScrollView>
-
-       
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={styles.chatButton} 
-              onPress={() => {
-                console.log('Start Chatting clicked!');
-                console.log('Navigation params:', {
-                  userId: passedProfile?.id || 2,
-                  userName: profileData.name,
-                  userImage: profileData.images[0]
-                });
-                navigation.navigate('ChatRoom', {
-                  userId: passedProfile?.id || 2,
-                  userName: profileData.name,
-                  userImage: profileData.images[0]
-                });
-              }}
-            >
-              <LinearGradient
-                colors={['#F23576', '#F23576']}
-                style={styles.chatButtonGradient}
-              >
-                <Text style={styles.chatButtonText}>Start Chatting</Text>
-              </LinearGradient>
-            </TouchableOpacity>
           </View>
-        </LinearGradient>
+
+
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Image
+                source={require('../../Assets/images/star.png')}
+                style={styles.statIcon}
+              />
+              <View>
+                <Text style={styles.statLabel}>Experience</Text>
+                <Text style={styles.statValue}>{profileData.experience}</Text>
+              </View>
+            </View>
+
+            <View style={styles.statItem}>
+              <Image
+                source={require('../../Assets/images/profileicon.png')}
+                style={styles.statIcon}
+              />
+              <View>
+                <Text style={styles.statLabel}>Clients Trained</Text>
+                <Text style={styles.statValue}>{profileData.clientsTrained}</Text>
+              </View>
+            </View>
+
+            <View style={styles.statItem}>
+              <Image
+                source={require('../../Assets/images/veri.png')}
+                style={styles.statIcon}
+              />
+              <View style={styles.locationTextContainer}>
+                <Text style={styles.statLabel}>Location</Text>
+                <Text style={styles.statValue} numberOfLines={2}>{profileData.location}</Text>
+              </View>
+            </View>
+          </View>
+
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>About</Text>
+            <Text style={styles.aboutText}>{profileData.about}</Text>
+          </View>
+
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Looking For</Text>
+            <Text style={styles.lookingForText}>{profileData.lookingFor}</Text>
+          </View>
+
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Interests</Text>
+            <View style={styles.tagsContainer}>
+              {profileData.interests && profileData.interests.map((interest, index) => {
+                let iconSource;
+                const lowerInterest = interest.toLowerCase();
+
+                if (lowerInterest.includes('gym')) {
+                  iconSource = require('../../Assets/images/gymicon.png');
+                } else if (lowerInterest.includes('sports')) {
+                  iconSource = require('../../Assets/images/sportsicon.png');
+                } else if (lowerInterest.includes('dance')) {
+                  iconSource = require('../../Assets/images/danceicon.png');
+                } else if (lowerInterest.includes('adventure') || lowerInterest.includes('outdoor')) {
+                  iconSource = require('../../Assets/images/advantureicon.png');
+                } else {
+                  iconSource = require('../../Assets/images/star.png');
+                }
+
+                return (
+                  <View key={index} style={styles.interestTag}>
+                    <Image
+                      source={iconSource}
+                      style={styles.interestIcon}
+                    />
+                    <Text style={styles.interestText}>{interest}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Specializations</Text>
+            <View style={styles.tagsContainer}>
+              {profileData.specializations && profileData.specializations.map((spec, index) => {
+                let iconSource;
+                const lowerSpec = spec.toLowerCase();
+
+                if (lowerSpec.includes('personal training')) {
+                  iconSource = require('../../Assets/images/gymicon.png');
+                } else if (lowerSpec.includes('functional training')) {
+                  iconSource = require('../../Assets/images/gymdance.png');
+                } else if (lowerSpec.includes('cardio fitness')) {
+                  iconSource = require('../../Assets/images/hline.png');
+                } else {
+                  iconSource = require('../../Assets/images/veri.png');
+                }
+
+                return (
+                  <View key={index} style={styles.specializationTag}>
+                    <Image
+                      source={iconSource}
+                      style={styles.specializationIcon}
+                    />
+                    <Text style={styles.specializationText}>{spec}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+
+
+        {/* <View style={styles.buttonContainer}> */}
+        <TouchableOpacity
+          style={styles.chatButton}
+          onPress={() => {
+            console.log('Start Chatting clicked!');
+            console.log('Navigation params:', {
+              userId: passedProfile?.id || 2,
+              userName: profileData.name,
+              userImage: profileData.images[0]
+            });
+            navigation.navigate('ChatRoom', {
+              userId: passedProfile?.id || 2,
+              userName: profileData.name,
+              userImage: profileData.images[0]
+            });
+          }}
+        >
+          <LinearGradient
+            colors={['#F23576', '#F23576']}
+            style={styles.chatButtonGradient}
+          >
+            <Text style={styles.chatButtonText}>Start Chatting</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+        {/* </View> */}
+      </LinearGradient>
     </View>
   );
 };
@@ -363,7 +372,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 50,
+    top: 20,
     left: 20,
     zIndex: 10,
     width: 40,
@@ -379,9 +388,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   imageContainer: {
-    height: height * 0.55, 
+    height: height * 0.55,
     position: 'relative',
-    overflow: 'hidden', 
+    overflow: 'hidden',
   },
   imageTouch: {
     width: '100%',
@@ -389,7 +398,7 @@ const styles = StyleSheet.create({
   },
   profileImage: {
     width: '100%',
-    height: '140%', 
+    height: '140%',
     resizeMode: 'cover',
     position: 'absolute',
     top: 0,
@@ -419,8 +428,8 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    marginTop: -150, 
-   
+    marginTop: -150,
+
     paddingTop: 20,
   },
   scrollView: {
@@ -469,7 +478,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     marginRight: 8,
-  
+
   },
   locationTextContainer: {
     flex: 1,
@@ -525,7 +534,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     marginRight: 6,
-   
+
   },
   interestText: {
     fontSize: 14,
@@ -568,16 +577,23 @@ const styles = StyleSheet.create({
   chatButton: {
     borderRadius: 25,
     overflow: 'hidden',
+    position: 'absolute',
+    bottom: 50,
+    left: 20,
+    right: 20,
+
   },
   chatButtonGradient: {
-    paddingVertical: 12,
+    // paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    height: 45
   },
   chatButtonText: {
     fontSize: 18,
     fontWeight: '700',
     color: 'white',
+
   },
   loadingContainer: {
     flex: 1,
