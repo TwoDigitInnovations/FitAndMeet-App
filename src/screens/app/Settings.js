@@ -16,6 +16,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
 import { deleteAuthToken } from '../../utils/storage';
 import { AuthContext } from '../../../App';
+<<<<<<< HEAD
 import {useTranslation} from 'react-i18next';
 import LanguageSelector from '../../components/LanguageSelector';
 
@@ -30,6 +31,16 @@ const Settings = ({navigation}) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   
+=======
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const Settings = ({ navigation }) => {
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const insets = useSafeAreaInsets();
+
+>>>>>>> de7c77b6b9320f74705d045083772af48d8aebbe
   // Get logout function from AuthContext
   const { logout } = useContext(AuthContext);
 
@@ -41,7 +52,7 @@ const Settings = ({navigation}) => {
     try {
       setLoading(true);
       const response = await apiService.GetApi('api/profile/stats');
-      
+
       if (response.success) {
         setProfileData(response.data);
       } else {
@@ -66,7 +77,7 @@ const Settings = ({navigation}) => {
       console.log("🚪 Logout initiated from Settings");
       setLoggingOut(true);
       setShowLogoutModal(false);
-      
+
       // Call API to logout (optional)
       try {
         await apiService.Post('api/profile/logout', {});
@@ -74,6 +85,7 @@ const Settings = ({navigation}) => {
       } catch (apiError) {
         console.log("⚠️ API logout failed, but continuing with local logout:", apiError);
       }
+<<<<<<< HEAD
       
       // Delete auth token
       await deleteAuthToken();
@@ -83,10 +95,16 @@ const Settings = ({navigation}) => {
         await logout();
       }
       
+=======
+
+      // Use the logout function from AuthContext
+      await logout();
+
+>>>>>>> de7c77b6b9320f74705d045083772af48d8aebbe
       console.log("✅ Logout completed successfully");
     } catch (error) {
       console.error('❌ Logout error:', error);
-      
+
       // Even if there's an error, try to logout locally
       try {
         await deleteAuthToken();
@@ -139,13 +157,14 @@ const Settings = ({navigation}) => {
       locations={[0, 0.4, 0.9, 1]}
       style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#571D38" />
-      
-    
-      <View style={styles.header}>
+
+
+      <View style={[styles.header, { paddingTop: Platform.OS === 'android' && insets.top + 10 }]}>
+
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Image 
-              source={require('../../Assets/images/backicon.png')} 
+            <Image
+              source={require('../../Assets/images/backicon.png')}
               style={styles.backIcon}
             />
           </TouchableOpacity>
@@ -153,22 +172,22 @@ const Settings = ({navigation}) => {
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.headerIcon}>
-            <Image 
-              source={require('../../Assets/images/veri.png')} 
+            <Image
+              source={require('../../Assets/images/veri.png')}
               style={styles.helpIcon}
             />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerIcon}>
-            <Image 
-              source={require('../../Assets/images/setting.png')} 
+            <Image
+              source={require('../../Assets/images/setting.png')}
               style={styles.settingIcon}
             />
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView 
-        style={styles.scrollView} 
+      <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         bounces={true}
@@ -184,8 +203,8 @@ const Settings = ({navigation}) => {
           <View style={styles.nameContainer}>
             <Text style={styles.profileName}>{getDisplayName()}</Text>
             {profileData?.user?.isVerified && (
-              <Image 
-                source={require('../../Assets/images/veri.png')} 
+              <Image
+                source={require('../../Assets/images/veri.png')}
                 style={styles.verifiedIcon}
               />
             )}
@@ -220,8 +239,8 @@ const Settings = ({navigation}) => {
           <View style={styles.cardHeader}>
             <View style={styles.fitMeetHeader}>
               <View style={styles.fitMeetIcon}>
-                <Image 
-                  source={require('../../Assets/images/profileicon.png')} 
+                <Image
+                  source={require('../../Assets/images/profileicon.png')}
                   style={styles.profileIconImage}
                 />
               </View>
@@ -233,7 +252,7 @@ const Settings = ({navigation}) => {
               </Text>
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.featureHeaderRow}>
             <Text style={styles.whatsIncluded}>{t('settings.whats_included')}</Text>
             <View style={styles.freeHeaderContainer}>
@@ -241,7 +260,7 @@ const Settings = ({navigation}) => {
               <Text style={styles.freeHeaderText}>{t('settings.free')}</Text>
             </View>
           </View>
-          
+
           {profileData?.subscription?.features?.map((feature, index) => (
             <View key={index} style={styles.featureRow}>
               <Text style={styles.featureText}>
@@ -250,23 +269,29 @@ const Settings = ({navigation}) => {
                  feature.name}
               </Text>
               <View style={styles.featureStatus}>
-                <Image 
-                  source={require('../../Assets/images/tick.png')} 
+                <Image
+                  source={require('../../Assets/images/tick.png')}
                   style={[styles.tickIcon, { opacity: feature.freeAccess ? 1 : 0.3 }]}
                 />
-                <Image 
-                  source={require('../../Assets/images/tick.png')} 
+                <Image
+                  source={require('../../Assets/images/tick.png')}
                   style={[styles.tickIcon, { opacity: feature.premiumAccess ? 1 : 0.3 }]}
                 />
               </View>
             </View>
           ))}
-          
+
           <View style={styles.seeAllFeaturesContainer}>
             <TouchableOpacity style={styles.seeAllFeatures}>
+<<<<<<< HEAD
               <Text style={styles.featureText}>{t('settings.see_all_features')}</Text>
               <Image 
                 source={require('../../Assets/images/right.png')} 
+=======
+              <Text style={styles.featureText}>See all features</Text>
+              <Image
+                source={require('../../Assets/images/right.png')}
+>>>>>>> de7c77b6b9320f74705d045083772af48d8aebbe
                 style={styles.rightIcon}
               />
             </TouchableOpacity>
@@ -277,8 +302,8 @@ const Settings = ({navigation}) => {
         <View style={styles.smallCard}>
           <View style={styles.smallCardContent}>
             <View style={styles.smallCardLeft}>
-              <Image 
-                source={require('../../Assets/images/star.png')} 
+              <Image
+                source={require('../../Assets/images/star.png')}
                 style={styles.starIcon}
               />
               <View style={styles.smallCardText}>
@@ -289,8 +314,8 @@ const Settings = ({navigation}) => {
               </View>
             </View>
             <TouchableOpacity style={styles.plusButton}>
-              <Image 
-                source={require('../../Assets/images/plus.png')} 
+              <Image
+                source={require('../../Assets/images/plus.png')}
                 style={styles.plusIcon}
               />
             </TouchableOpacity>
@@ -301,8 +326,8 @@ const Settings = ({navigation}) => {
         <View style={styles.smallCard}>
           <View style={styles.smallCardContent}>
             <View style={styles.smallCardLeft}>
-              <Image 
-                source={require('../../Assets/images/gift.png')} 
+              <Image
+                source={require('../../Assets/images/gift.png')}
                 style={styles.giftIcon}
               />
               <View style={styles.smallCardText}>
@@ -312,8 +337,8 @@ const Settings = ({navigation}) => {
               </View>
             </View>
             <TouchableOpacity>
-              <Image 
-                source={require('../../Assets/images/rightarrow.png')} 
+              <Image
+                source={require('../../Assets/images/rightarrow.png')}
                 style={styles.rightArrowIcon}
               />
             </TouchableOpacity>
@@ -324,8 +349,8 @@ const Settings = ({navigation}) => {
         <View style={styles.smallCard}>
           <View style={styles.smallCardContent}>
             <View style={styles.smallCardLeft}>
-              <Image 
-                source={require('../../Assets/images/eye.png')} 
+              <Image
+                source={require('../../Assets/images/eye.png')}
                 style={styles.eyeIcon}
               />
               <View style={styles.smallCardText}>
@@ -336,8 +361,8 @@ const Settings = ({navigation}) => {
               </View>
             </View>
             <TouchableOpacity style={styles.plusButton}>
-              <Image 
-                source={require('../../Assets/images/plus.png')} 
+              <Image
+                source={require('../../Assets/images/plus.png')}
                 style={styles.plusIcon}
               />
             </TouchableOpacity>
@@ -359,9 +384,15 @@ const Settings = ({navigation}) => {
         {/* Logout */}
         <View style={styles.logoutCard}>
           <TouchableOpacity style={styles.smallCardContent} onPress={handleLogout}>
+<<<<<<< HEAD
             <Text style={styles.smallCardTitle}>{t('settings.logout')}</Text>
             <Image 
               source={require('../../Assets/images/exit.png')} 
+=======
+            <Text style={styles.smallCardTitle}>Logout</Text>
+            <Image
+              source={require('../../Assets/images/exit.png')}
+>>>>>>> de7c77b6b9320f74705d045083772af48d8aebbe
               style={styles.exitIcon}
             />
           </TouchableOpacity>
@@ -379,27 +410,33 @@ const Settings = ({navigation}) => {
             <View style={styles.modalContent}>
               {/* Exit Icon */}
               <View style={styles.modalIconContainer}>
-                <Image 
-                  source={require('../../Assets/images/exit.png')} 
+                <Image
+                  source={require('../../Assets/images/exit.png')}
                   style={styles.modalExitIcon}
                 />
               </View>
-              
+
               {/* Title */}
+<<<<<<< HEAD
               <Text style={styles.modalTitle}>{t('settings.logout')}</Text>
               
+=======
+              <Text style={styles.modalTitle}>Logout</Text>
+
+>>>>>>> de7c77b6b9320f74705d045083772af48d8aebbe
               {/* Message */}
               <Text style={styles.modalMessage}>
                 {t('settings.logout_confirmation')}
               </Text>
-              
+
               {/* Buttons */}
               <View style={styles.modalButtons}>
-                <TouchableOpacity 
-                  style={styles.cancelButton} 
+                <TouchableOpacity
+                  style={styles.cancelButton}
                   onPress={cancelLogout}>
                   <Text style={styles.cancelButtonText}>{t('firstname.cancel')}</Text>
                 </TouchableOpacity>
+<<<<<<< HEAD
                 
                 <TouchableOpacity 
                   style={[styles.logoutButton, loggingOut && styles.logoutButtonDisabled]} 
@@ -411,6 +448,13 @@ const Settings = ({navigation}) => {
                   ) : (
                     <Text style={styles.logoutButtonText}>{t('settings.logout')}</Text>
                   )}
+=======
+
+                <TouchableOpacity
+                  style={styles.logoutButton}
+                  onPress={confirmLogout}>
+                  <Text style={styles.logoutButtonText}>Logout</Text>
+>>>>>>> de7c77b6b9320f74705d045083772af48d8aebbe
                 </TouchableOpacity>
               </View>
             </View>
@@ -607,8 +651,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 3,
     borderRadius: 20,
-    borderColor:'white',
-    borderWidth:1
+    borderColor: 'white',
+    borderWidth: 1
   },
   editButtonText: {
     color: 'white',
@@ -628,8 +672,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 6,
     borderRadius: 15,
-    borderColor:'white',
-    borderWidth:1
+    borderColor: 'white',
+    borderWidth: 1
   },
   upgradeButtonText: {
     color: 'white',
