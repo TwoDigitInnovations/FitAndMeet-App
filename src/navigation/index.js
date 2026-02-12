@@ -46,14 +46,14 @@ const AuthNavigate = () => {
 
 const AppNavigate = () => {
     const [user] = useContext(UserContext);
-    
+
     // Determine route based on profile completion
     const getRequiredRoute = () => {
         if (!user) return 'TabNav';
-        
+
         // If profileCompleted flag is set, go to TabNav
         if (user.profileCompleted) return 'TabNav';
-        
+
         // Check profile completion step by step
         if (!user.gymName) return 'SelectGym';
         if (!user.termsAccepted) return 'TermsScreen';
@@ -63,16 +63,16 @@ const AppNavigate = () => {
         if (!user.interests || user.interests.length === 0) return 'FirstName';
         if (!user.bio) return 'FirstName';
         if (!user.photos || user.photos.length === 0) return 'FirstName';
-        
+
         // Profile is complete
         return 'TabNav';
     };
-    
+
     const initialRoute = getRequiredRoute();
-    
+
     return (
-        <AppStack.Navigator 
-            screenOptions={{ headerShown: false }} 
+        <AppStack.Navigator
+            screenOptions={{ headerShown: false }}
             initialRouteName={initialRoute}
         >
             <AppStack.Screen name="SelectGym" component={SelectGym} />
@@ -93,7 +93,7 @@ const AppNavigate = () => {
 export default function Navigation({ isAuthenticated = false }) {
     // Add a key to force remount when authentication changes
     const navigationKey = isAuthenticated ? 'authenticated' : 'unauthenticated';
-    
+
     if (isAuthenticated) {
         return (
             <NavigationContainer ref={navigationRef} key={navigationKey}>

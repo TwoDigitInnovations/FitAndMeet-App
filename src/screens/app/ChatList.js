@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,28 +12,30 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
-import {Search, Mic} from 'lucide-react-native';
+import { Search, Mic } from 'lucide-react-native';
 import chatApiService from '../../services/chatApiService';
-import {getAuthToken} from '../../utils/storage';
-import {getCurrentUserId} from '../../utils/tokenUtils';
-import {migrateChatDataToUserSpecific} from '../../utils/chatCleanup';
+import { getAuthToken } from '../../utils/storage';
+import { getCurrentUserId } from '../../utils/tokenUtils';
+import { migrateChatDataToUserSpecific } from '../../utils/chatCleanup';
 import SafeImage from '../../components/SafeImage';
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 700;
 const topPadding = isSmallScreen ? 30 : 40;
 
-const ChatList = ({navigation}) => {
-  const {t} = useTranslation();
+const ChatList = ({ navigation }) => {
   const [chats, setChats] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   useEffect(() => {
     initializeChatList();
-    
+
     const unsubscribe = navigation.addListener('focus', () => {
       loadConversations();
     });
@@ -48,14 +50,14 @@ const ChatList = ({navigation}) => {
         navigation.navigate('SignIn');
         return;
       }
-      
-     
+
+
       const userId = await getCurrentUserId();
       setCurrentUserId(userId);
-      
-   
+
+
       await migrateChatDataToUserSpecific();
-      
+
       await loadConversations();
     } catch (error) {
       console.error('Error initializing chat list:', error);
@@ -67,11 +69,11 @@ const ChatList = ({navigation}) => {
     try {
       console.log('Loading conversations...');
       setLoading(true);
-      
+
       const token = await getAuthToken();
       if (!token) return;
 
-   
+
       try {
         const response = await chatApiService.get('/api/chat/conversations');
 
@@ -84,30 +86,30 @@ const ChatList = ({navigation}) => {
         console.error('Backend error, falling back to local storage:', backendError);
       }
 
-    
+
       const userId = currentUserId || await getCurrentUserId() || 'unknown';
       const userSpecificConversationsKey = `all_conversations_${userId}`;
       const savedConversations = await AsyncStorage.getItem(userSpecificConversationsKey);
-      
+
       console.log('Saved conversations from AsyncStorage:', savedConversations);
-      
+
       if (savedConversations) {
         const conversations = JSON.parse(savedConversations);
         console.log('Parsed conversations:', conversations);
-        
+
         const formattedChats = conversations.map(conv => ({
           id: conv.userId,
           otherUser: {
             id: conv.userId,
             name: conv.userName,
             profileImage: conv.userImage,
-            isOnline: Math.random() > 0.5 
+            isOnline: Math.random() > 0.5
           },
           lastMessage: conv.lastMessage,
-          unreadCount: 0, 
+          unreadCount: 0,
           updatedAt: conv.updatedAt
         }));
-        
+
         console.log('Formatted chats:', formattedChats);
         setChats(formattedChats);
       } else {
@@ -126,7 +128,7 @@ const ChatList = ({navigation}) => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = (now - date) / (1000 * 60 * 60);
-    
+
     if (diffInHours < 1) {
       return t('chatlist.just_now');
     } else if (diffInHours < 24) {
@@ -143,7 +145,7 @@ const ChatList = ({navigation}) => {
     }
   };
 
-  const renderChatItem = ({item}) => (
+  const renderChatItem = ({ item }) => (
     <TouchableOpacity
       style={styles.chatItem}
       onPress={() => navigation.navigate('ChatRoom', {
@@ -159,7 +161,7 @@ const ChatList = ({navigation}) => {
         />
         {item.otherUser.isOnline && <View style={styles.onlineIndicator} />}
       </View>
-      
+
       <View style={styles.chatContent}>
         <View style={styles.chatHeader}>
           <Text style={styles.userName}>{item.otherUser.name}</Text>
@@ -167,7 +169,7 @@ const ChatList = ({navigation}) => {
             {formatTime(item.lastMessage?.createdAt)}
           </Text>
         </View>
-        
+
         <View style={styles.messageRow}>
           <Text style={styles.lastMessage} numberOfLines={1}>
             {item.lastMessage?.text || item.lastMessage?.content || t('chatlist.start_conversation')}
@@ -191,25 +193,26 @@ const ChatList = ({navigation}) => {
   return (
     <LinearGradient colors={['#5D1F3A', '#38152C', '#070A1A']} style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#5D1F3A" />
-      
-   
-      <View style={styles.header}>
-        <TouchableOpacity 
+
+
+      <View style={[styles.header, { paddingTop: Platform.OS === 'android' && insets.top + 10 }]}>
+
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-         <Image 
-                      source={require('../../Assets/images/backicon.png')} 
-                      style={styles.backIcon}
-                    />
+          <Image
+            source={require('../../Assets/images/backicon.png')}
+            style={styles.backIcon}
+          />
         </TouchableOpacity>
-        
+
         <Text style={styles.headerTitle}>{t('chatlist.messages')}</Text>
-        
+
         <View style={styles.headerRight} />
       </View>
 
-   
+
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Search size={20} color="#FFFFFF" style={styles.searchIcon} />
@@ -226,10 +229,10 @@ const ChatList = ({navigation}) => {
         </View>
       </View>
 
-   
+
       <View style={styles.chatsSection}>
         <Text style={styles.sectionTitle}>{t('chatlist.chats')}</Text>
-        
+
         {loading ? (
           <View style={styles.loadingContainer}>
             <Text style={styles.loadingText}>{t('chatlist.loading_chats')}</Text>
@@ -269,7 +272,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-   
+
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -292,6 +295,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     paddingHorizontal: 20,
     paddingVertical: 1,
+    minHeight: 40
   },
   searchIcon: {
     marginRight: 10,

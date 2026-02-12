@@ -14,7 +14,8 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -28,13 +29,15 @@ const buttonPadding = isNarrowScreen ? 14 : 20;
 const buttonFontSize = isNarrowScreen ? 13 : 14;
 
 const Discover = ({ navigation }) => {
-  const {t, i18n} = useTranslation();
+  const { t, i18n } = useTranslation();
   const [selectedFilter, setSelectedFilter] = useState('Near by');
   const [likedProfiles, setLikedProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
-  
+
   const filterOptions = [t('discover.near_by'), t('discover.online_now'), t('discover.new_profile')];
+  const insets = useSafeAreaInsets();
+
 
   useEffect(() => {
     fetchLikedProfiles();
@@ -56,7 +59,7 @@ const Discover = ({ navigation }) => {
     try {
       setLoading(true);
       const response = await apiService.GetApi('api/match/liked-profiles');
-      
+
       if (response.success) {
         setLikedProfiles(response.likedProfiles || []);
       } else {
@@ -75,12 +78,12 @@ const Discover = ({ navigation }) => {
 
   const renderProfileCard = ({ item, index }) => {
     const isLeftColumn = index % 2 === 0;
-    
-    
+
+
     const firstName = item.name ? item.name.split(' ')[0] : '';
-    
+
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[
           styles.profileCard,
           { marginRight: isLeftColumn ? 8 : 0, marginLeft: isLeftColumn ? 0 : 8 }
@@ -88,37 +91,37 @@ const Discover = ({ navigation }) => {
         activeOpacity={0.8}
         onPress={() => navigation.navigate('ProfileDetails', { profile: item })}
       >
-        <Image 
-          source={{ 
+        <Image
+          source={{
             uri: item.image || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80'
-          }} 
-          style={styles.profileImage} 
+          }}
+          style={styles.profileImage}
         />
-        
+
         {/* Gradient overlay */}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.8)']}
           style={styles.profileOverlay}
         />
-        
+
         {/* Profile info */}
         <View style={styles.profileInfo}>
           <View style={styles.nameContainer}>
             <Text style={styles.profileName}>{firstName} {item.age}</Text>
             {item.isVerified && (
-              <Image 
-                source={require('../../Assets/images/badge.png')} 
+              <Image
+                source={require('../../Assets/images/badge.png')}
                 style={styles.verifiedBadge}
               />
             )}
           </View>
           <Text style={styles.timeLeft}>{item.timeLeft}</Text>
         </View>
-        
-    
+
+
         <TouchableOpacity style={styles.starButton}>
-          <Image 
-            source={require('../../Assets/images/sun.png')} 
+          <Image
+            source={require('../../Assets/images/sun.png')}
             style={styles.starIcon}
           />
         </TouchableOpacity>
@@ -132,17 +135,18 @@ const Discover = ({ navigation }) => {
       locations={[0, 0.4, 0.9, 1]}
       style={styles.container}
     >
+      {/* <View style={[styles.topProfileSection, { paddingTop: Platform.OS === 'android' && insets.top + 10 }]}></View> */}
       <StatusBar barStyle="light-content" backgroundColor="#571D38" />
-      
+
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Platform.OS === 'android' && insets.top + 10 }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-            <Image 
+            <Image
               source={{
-                uri: currentUser?.photos?.[0]?.url || 
-                     currentUser?.profileImage || 
-                     'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80'
+                uri: currentUser?.photos?.[0]?.url ||
+                  currentUser?.profileImage ||
+                  'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80'
               }}
               style={styles.profileAvatar}
             />
@@ -156,19 +160,19 @@ const Discover = ({ navigation }) => {
               style={styles.helpIcon}
             />
           </TouchableOpacity> */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.headerIcon}
             onPress={() => navigation.navigate('Messages')}
           >
-            <Image 
-              source={require('../../Assets/images/message.png')} 
+            <Image
+              source={require('../../Assets/images/message.png')}
               style={styles.settingIcon}
             />
           </TouchableOpacity>
         </View>
       </View>
 
-    
+
       <View style={styles.filterContainer}>
         {filterOptions.map((filter, index) => (
           <TouchableOpacity
@@ -206,7 +210,7 @@ const Discover = ({ navigation }) => {
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>{t('discover.no_liked_profiles')}</Text>
           <Text style={styles.emptySubText}>{t('discover.start_liking_profiles')}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.refreshButton}
             onPress={fetchLikedProfiles}
           >
@@ -225,7 +229,7 @@ const Discover = ({ navigation }) => {
         />
       )}
 
-     
+
     </LinearGradient>
   );
 };
@@ -373,7 +377,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-   
+
     justifyContent: 'center',
     alignItems: 'center',
   },
