@@ -26,7 +26,7 @@ const AppStack = createNativeStackNavigator();
 
 const AuthNavigate = () => {
     return (
-        <AuthStack.Navigator screenOptions={{ headerShown: false }} initialRouteName='FirstName'>
+        <AuthStack.Navigator screenOptions={{ headerShown: false }} initialRouteName='Welcome'>
             <AuthStack.Screen name="Welcome" component={WelcomeScreen} />
             <AuthStack.Screen name="SignIn" component={SignIn} />
             <AuthStack.Screen name="SignUp" component={SignUp} />
@@ -76,7 +76,7 @@ export default function Navigation({ isAuthenticated = false }) {
             <NavigationContainer ref={navigationRef}>
                 <Stack.Navigator
                     screenOptions={{ headerShown: false }}
-                    initialRouteName="Auth"
+                    initialRouteName="Splash"
                 >
                     <Stack.Screen name="Splash" component={SplashScreen} />
                     <Stack.Screen name="Onboarding" component={OnboardingScreen} />

@@ -148,13 +148,13 @@ function App() {
             <AuthContext.Provider value={{ logout, isAuthenticated, setIsAuthenticated, handleLoginSuccess }}>
               <Spinner isLoading={loading} />
 
-              {/* {FORCE_AUTH_FOR_TESTING || isAuthenticated ? (
+              {FORCE_AUTH_FOR_TESTING || isAuthenticated ? (
 
                 <Navigation isAuthenticated={true} />
-              ) : ( */}
+              ) : (
 
-              <Navigation isAuthenticated={false} />
-              {/* )} */}
+                <Navigation isAuthenticated={false} />
+              )}
             </AuthContext.Provider>
           </LoadContext.Provider>
         </UserContext.Provider>
