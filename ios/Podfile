@@ -40,6 +40,8 @@ target 'datingapp' do
 
 pod 'react-native-blob-util',
     :path => '../node_modules/react-native-blob-util'
+    # pod 'RNDatePicker', :path => '../node_modules/react-native-date-picker'
+
 
   use_react_native!(
     :path => config[:reactNativePath],

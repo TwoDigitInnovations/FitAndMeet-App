@@ -26,7 +26,7 @@ const AppStack = createNativeStackNavigator();
 
 const AuthNavigate = () => {
     return (
-        <AuthStack.Navigator screenOptions={{ headerShown: false }} initialRouteName='Welcome'>
+        <AuthStack.Navigator screenOptions={{ headerShown: false }} initialRouteName='FirstName'>
             <AuthStack.Screen name="Welcome" component={WelcomeScreen} />
             <AuthStack.Screen name="SignIn" component={SignIn} />
             <AuthStack.Screen name="SignUp" component={SignUp} />
@@ -55,7 +55,7 @@ const AppNavigate = () => {
 
 export default function Navigation({ isAuthenticated = false }) {
     console.log("🚀 Navigation component received isAuthenticated:", isAuthenticated);
-    
+
     if (isAuthenticated) {
         console.log("✅ User is authenticated - showing App navigation (Home screen)");
         // User is authenticated - go directly to App (Home screen)
@@ -76,7 +76,7 @@ export default function Navigation({ isAuthenticated = false }) {
             <NavigationContainer ref={navigationRef}>
                 <Stack.Navigator
                     screenOptions={{ headerShown: false }}
-                    initialRouteName="Splash"
+                    initialRouteName="Auth"
                 >
                     <Stack.Screen name="Splash" component={SplashScreen} />
                     <Stack.Screen name="Onboarding" component={OnboardingScreen} />
