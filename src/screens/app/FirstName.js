@@ -13,11 +13,9 @@ import {
   ScrollView,
   Modal,
 } from 'react-native';
-import DatePicker from 'react-native-date-picker';
 import apiService from '../../services/apiService';
 import CameraGalleryPicker from '../../components/CameraGalleryPeacker';
 import { useTranslation } from 'react-i18next';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
 import CustomeModal from '../../components/CustomeModal'
 
@@ -85,7 +83,9 @@ const FirstName = ({ navigation }) => {
     setSelectedDate(new Date(date));
     const formattedDate = formatDate(new Date(date));
     setBirthday(formattedDate);
-    // setDatePickerOpen(false);
+    if (Platform.OS === 'android') {
+      setDatePickerOpen(false);
+    }
   };
 
   const formatDate = (date) => {
@@ -427,170 +427,172 @@ const FirstName = ({ navigation }) => {
         <View style={styles.content}>
           <Text style={styles.title}>{stepData.title}</Text>
 
-          {stepData.isGenderStep ? (
-            <View>
-              {stepData.subtitle}
+          {stepData.isGenderStep ?
+            (
+              <View>
+                {stepData.subtitle}
 
-              <Text style={styles.iAmText}>{t('firstname.i_am')}</Text>
+                <Text style={styles.iAmText}>{t('firstname.i_am')}</Text>
 
-              <TouchableOpacity
-                style={styles.genderOption}
-                onPress={() => setGender('Man')}>
-                <Text style={styles.genderText}>{t('firstname.man')}</Text>
-                <View style={[styles.radioButton, gender === 'Man' && styles.radioButtonSelected]}>
-                  {gender === 'Man' && <View style={styles.radioButtonInner} />}
+                <TouchableOpacity
+                  style={styles.genderOption}
+                  onPress={() => setGender('Man')}>
+                  <Text style={styles.genderText}>{t('firstname.man')}</Text>
+                  <View style={[styles.radioButton, gender === 'Man' && styles.radioButtonSelected]}>
+                    {gender === 'Man' && <View style={styles.radioButtonInner} />}
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.genderOption}
+                  onPress={() => setGender('Woman')}>
+                  <Text style={styles.genderText}>{t('firstname.woman')}</Text>
+                  <View style={[styles.radioButton, gender === 'Woman' && styles.radioButtonSelected]}>
+                    {gender === 'Woman' && <View style={styles.radioButtonInner} />}
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.genderOption}
+                  onPress={() => setGender('Other')}>
+                  <Text style={styles.genderText}>{t('firstname.other')}</Text>
+                  <View style={[styles.radioButton, gender === 'Other' && styles.radioButtonSelected]}>
+                    {gender === 'Other' && <View style={styles.radioButtonInner} />}
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.learnMoreButton}>
+                  {/* <Text style={styles.learnMoreText}>Learn how Fit & Meet uses this info</Text> */}
+                </TouchableOpacity>
+              </View>
+            ) : stepData.isPhotoStep ? (
+              <View>
+                {stepData.subtitle}
+
+                <View style={styles.photoGrid}>
+                  {[0, 1, 2, 3, 4].map((index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.photoSlot,
+                        photos[index] && styles.photoSlotSelected
+                      ]}
+                      onPress={() => handlePhotoUpload(index)}
+                      disabled={uploading}>
+                      {photos[index] ? (
+                        <Image
+                          source={{ uri: photos[index].uri }}
+                          style={styles.photoImage}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <Image
+                          source={require('../../Assets/images/camm.png')}
+                          style={styles.cameraImage}
+                          resizeMode="contain"
+                        />
+                      )}
+                    </TouchableOpacity>
+                  ))}
                 </View>
-              </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.genderOption}
-                onPress={() => setGender('Woman')}>
-                <Text style={styles.genderText}>{t('firstname.woman')}</Text>
-                <View style={[styles.radioButton, gender === 'Woman' && styles.radioButtonSelected]}>
-                  {gender === 'Woman' && <View style={styles.radioButtonInner} />}
+                {uploading && (
+                  <View style={styles.uploadingContainer}>
+                    <ActivityIndicator size="small" color="#FF3B6D" />
+                    <Text style={styles.uploadingText}>{t('firstname.uploading')}</Text>
+                  </View>
+                )}
+              </View>
+            ) : stepData.isBioStep ? (
+              <View>
+                {stepData.subtitle}
+
+                <TextInput
+                  style={styles.bioTextArea}
+                  value={bio}
+                  onChangeText={setBio}
+                  placeholder={t('firstname.bio_placeholder')}
+                  placeholderTextColor="#CCCCCC"
+                  multiline={true}
+                  numberOfLines={8}
+                  maxLength={500}
+                />
+              </View>
+            ) : stepData.isInterestsStep ? (
+              <View>
+                {stepData.subtitle}
+
+                <View style={styles.interestsGrid}>
+                  {[
+                    { name: 'Creativity', translationKey: 'firstname.interests.creativity', image: require('../../Assets/images/Paint.png') },
+                    { name: 'Sports', translationKey: 'firstname.interests.sports', image: require('../../Assets/images/tennis ball.png') },
+                    { name: 'Gym', translationKey: 'firstname.interests.gym', image: require('../../Assets/images/Gym.png') },
+                    { name: 'Movies', translationKey: 'firstname.interests.movies', image: require('../../Assets/images/Clapper Board.png') },
+                    { name: 'Gaming', translationKey: 'firstname.interests.gaming', image: require('../../Assets/images/Gaming.png') },
+                    { name: 'Going out', translationKey: 'firstname.interests.going_out', image: require('../../Assets/images/Disco Light.png') },
+                    { name: 'Music', translationKey: 'firstname.interests.music', image: require('../../Assets/images/Music.png') },
+                    { name: 'Food & Drink', translationKey: 'firstname.interests.food_drink', image: require('../../Assets/images/Food.png') },
+                    { name: 'Staying in', translationKey: 'firstname.interests.staying_in', image: require('../../Assets/images/Home.png') },
+                    { name: 'Concert', translationKey: 'firstname.interests.concert', image: require('../../Assets/images/Dancing.png') },
+                    { name: 'Dance', translationKey: 'firstname.interests.dance', emoji: '💃' },
+                    { name: 'Festival', translationKey: 'firstname.interests.festival', image: require('../../Assets/images/Barley.png') },
+                    { name: 'Adventure & outdoors', translationKey: 'firstname.interests.adventure_outdoors', image: require('../../Assets/images/image 66.png') },
+                  ].map((interest, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.interestCard,
+                        interests.includes(interest.name) && styles.interestCardSelected
+                      ]}
+                      onPress={() => toggleInterest(interest.name)}>
+                      {interest.image ? (
+                        <Image
+                          source={interest.image}
+                          style={styles.interestImage}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <Text style={styles.interestEmoji}>{interest.emoji}</Text>
+                      )}
+                      <Text style={[
+                        styles.interestText,
+                        interests.includes(interest.name) && styles.interestTextSelected
+                      ]}>{t(interest.translationKey)}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-              </TouchableOpacity>
+              </View>
+            ) : stepData.isAgeRangeStep ? (
+              <View>
+                {stepData.subtitle}
 
-              <TouchableOpacity
-                style={styles.genderOption}
-                onPress={() => setGender('Other')}>
-                <Text style={styles.genderText}>{t('firstname.other')}</Text>
-                <View style={[styles.radioButton, gender === 'Other' && styles.radioButtonSelected]}>
-                  {gender === 'Other' && <View style={styles.radioButtonInner} />}
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.learnMoreButton}>
-                {/* <Text style={styles.learnMoreText}>Learn how Fit & Meet uses this info</Text> */}
-              </TouchableOpacity>
-            </View>
-          ) : stepData.isPhotoStep ? (
-            <View>
-              {stepData.subtitle}
-
-              <View style={styles.photoGrid}>
-                {[0, 1, 2, 3, 4].map((index) => (
+                <View style={styles.ageRangeContainer}>
                   <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.photoSlot,
-                      photos[index] && styles.photoSlotSelected
-                    ]}
-                    onPress={() => handlePhotoUpload(index)}
-                    disabled={uploading}>
-                    {photos[index] ? (
-                      <Image
-                        source={{ uri: photos[index].uri }}
-                        style={styles.photoImage}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <Image
-                        source={require('../../Assets/images/camm.png')}
-                        style={styles.cameraImage}
-                        resizeMode="contain"
-                      />
-                    )}
+                    style={[styles.ageRangeButton, ageRange === '18-25' && styles.ageRangeButtonSelected]}
+                    onPress={() => setAgeRange('18-25')}>
+                    <Text style={[styles.ageRangeText, ageRange === '18-25' && styles.ageRangeTextSelected]}>{t('firstname.age_18_25')}</Text>
                   </TouchableOpacity>
-                ))}
-              </View>
 
-              {uploading && (
-                <View style={styles.uploadingContainer}>
-                  <ActivityIndicator size="small" color="#FF3B6D" />
-                  <Text style={styles.uploadingText}>{t('firstname.uploading')}</Text>
-                </View>
-              )}
-            </View>
-          ) : stepData.isBioStep ? (
-            <View>
-              {stepData.subtitle}
-
-              <TextInput
-                style={styles.bioTextArea}
-                value={bio}
-                onChangeText={setBio}
-                placeholder={t('firstname.bio_placeholder')}
-                placeholderTextColor="#CCCCCC"
-                multiline={true}
-                numberOfLines={8}
-                maxLength={500}
-              />
-            </View>
-          ) : stepData.isInterestsStep ? (
-            <View>
-              {stepData.subtitle}
-
-              <View style={styles.interestsGrid}>
-                {[
-                  { name: 'Creativity', translationKey: 'firstname.interests.creativity', image: require('../../Assets/images/Paint.png') },
-                  { name: 'Sports', translationKey: 'firstname.interests.sports', image: require('../../Assets/images/tennis ball.png') },
-                  { name: 'Gym', translationKey: 'firstname.interests.gym', image: require('../../Assets/images/Gym.png') },
-                  { name: 'Movies', translationKey: 'firstname.interests.movies', image: require('../../Assets/images/Clapper Board.png') },
-                  { name: 'Gaming', translationKey: 'firstname.interests.gaming', image: require('../../Assets/images/Gaming.png') },
-                  { name: 'Going out', translationKey: 'firstname.interests.going_out', image: require('../../Assets/images/Disco Light.png') },
-                  { name: 'Music', translationKey: 'firstname.interests.music', image: require('../../Assets/images/Music.png') },
-                  { name: 'Food & Drink', translationKey: 'firstname.interests.food_drink', image: require('../../Assets/images/Food.png') },
-                  { name: 'Staying in', translationKey: 'firstname.interests.staying_in', image: require('../../Assets/images/Home.png') },
-                  { name: 'Concert', translationKey: 'firstname.interests.concert', image: require('../../Assets/images/Dancing.png') },
-                  { name: 'Dance', translationKey: 'firstname.interests.dance', emoji: '💃' },
-                  { name: 'Festival', translationKey: 'firstname.interests.festival', image: require('../../Assets/images/Barley.png') },
-                  { name: 'Adventure & outdoors', translationKey: 'firstname.interests.adventure_outdoors', image: require('../../Assets/images/image 66.png') },
-                ].map((interest, index) => (
                   <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.interestCard,
-                      interests.includes(interest.name) && styles.interestCardSelected
-                    ]}
-                    onPress={() => toggleInterest(interest.name)}>
-                    {interest.image ? (
-                      <Image
-                        source={interest.image}
-                        style={styles.interestImage}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <Text style={styles.interestEmoji}>{interest.emoji}</Text>
-                    )}
-                    <Text style={[
-                      styles.interestText,
-                      interests.includes(interest.name) && styles.interestTextSelected
-                    ]}>{t(interest.translationKey)}</Text>
+                    style={[styles.ageRangeButton, ageRange === '25-35' && styles.ageRangeButtonSelected]}
+                    onPress={() => setAgeRange('25-35')}>
+                    <Text style={[styles.ageRangeText, ageRange === '25-35' && styles.ageRangeTextSelected]}>{t('firstname.age_25_35')}</Text>
                   </TouchableOpacity>
-                ))}
+
+                  <TouchableOpacity
+                    style={[styles.ageRangeButton, ageRange === '35-45' && styles.ageRangeButtonSelected]}
+                    onPress={() => setAgeRange('35-45')}>
+                    <Text style={[styles.ageRangeText, ageRange === '35-45' && styles.ageRangeTextSelected]}>{t('firstname.age_35_45')}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.ageRangeButton, ageRange === '45-Over' && styles.ageRangeButtonSelected]}
+                    onPress={() => setAgeRange('45-Over')}>
+                    <Text style={[styles.ageRangeText, ageRange === '45-Over' && styles.ageRangeTextSelected]}>{t('firstname.age_45_over')}</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          ) : stepData.isAgeRangeStep ? (
-            <View>
-              {stepData.subtitle}
-
-              <View style={styles.ageRangeContainer}>
-                <TouchableOpacity
-                  style={[styles.ageRangeButton, ageRange === '18-25' && styles.ageRangeButtonSelected]}
-                  onPress={() => setAgeRange('18-25')}>
-                  <Text style={[styles.ageRangeText, ageRange === '18-25' && styles.ageRangeTextSelected]}>{t('firstname.age_18_25')}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.ageRangeButton, ageRange === '25-35' && styles.ageRangeButtonSelected]}
-                  onPress={() => setAgeRange('25-35')}>
-                  <Text style={[styles.ageRangeText, ageRange === '25-35' && styles.ageRangeTextSelected]}>{t('firstname.age_25_35')}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.ageRangeButton, ageRange === '35-45' && styles.ageRangeButtonSelected]}
-                  onPress={() => setAgeRange('35-45')}>
-                  <Text style={[styles.ageRangeText, ageRange === '35-45' && styles.ageRangeTextSelected]}>{t('firstname.age_35_45')}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.ageRangeButton, ageRange === '45-Over' && styles.ageRangeButtonSelected]}
-                  onPress={() => setAgeRange('45-Over')}>
-                  <Text style={[styles.ageRangeText, ageRange === '45-Over' && styles.ageRangeTextSelected]}>{t('firstname.age_45_over')}</Text>
-                </TouchableOpacity>
-              </View>
-              ) : stepData.isLookingForStep ? (
+            ) : stepData.isLookingForStep ? (
               <View>
                 {stepData.subtitle}
 
@@ -636,7 +638,7 @@ const FirstName = ({ navigation }) => {
                   <Text style={styles.cardText}>Looking for Both</Text>
                 </TouchableOpacity>
               </View>
-              ) : stepData.isInterestedStep ? (
+            ) : stepData.isInterestedStep ? (
               <View>
                 {stepData.subtitle}
 
@@ -671,7 +673,7 @@ const FirstName = ({ navigation }) => {
                   {/* <Text style={styles.learnMoreText}>Learn how Fit & Meet uses this info</Text> */}
                 </TouchableOpacity>
               </View>
-              ) : stepData.isBirthdayStep ? (
+            ) : stepData.isBirthdayStep ? (
               <View>
                 <TouchableOpacity
                   style={styles.datePickerButton}
@@ -685,121 +687,100 @@ const FirstName = ({ navigation }) => {
                   <Text style={styles.calendarIcon}>📅</Text>
                 </TouchableOpacity>
                 {stepData.subtitle}
-
-
-                <CustomeModal
-                  confirmButtonColor='#FF3B6D'
-                  confirmButtonName='CONFIRM'
-                  title='Select Your Birthday'
-                  titleColor='#FF3B6D'
-                  onCancel={() => { console.log('Canceled'); setDatePickerOpen(false) }}
-                  onConfirm={() => { console.log('Confirmed'); setDatePickerOpen(false) }}
-                  open={datePickerOpen}
-                >
-                  <RNDateTimePicker
-                    value={selectedDate}
-                    mode="date"
-                    maximumDate={new Date()}
-                    minimumDate={new Date(1950, 0, 1)}
-                    display='spinner'
-                    onChange={handleDateConfirm}
-                    title="Select your birthday" />
-                </CustomeModal>
-
-
-
               </View>
-              ) : (
-              <View>
-                <TextInput
-                  style={styles.input}
-                  value={stepData.value}
-                  onChangeText={stepData.onChangeText}
-                  placeholder={stepData.placeholder}
-                  placeholderTextColor="#CCCCCC"
-                  keyboardType={stepData.keyboardType || 'default'}
-                  maxLength={stepData.maxLength || 50}
-                />
-                <Text style={styles.cardText}>{t('firstname.long_term_partner')}</Text>
-              </View>
+            )
+              // : (
+              //   <View>
+              //     <TextInput
+              //       style={styles.input}
+              //       value={stepData.value}
+              //       onChangeText={stepData.onChangeText}
+              //       placeholder={stepData.placeholder}
+              //       placeholderTextColor="#CCCCCC"
+              //       keyboardType={stepData.keyboardType || 'default'}
+              //       maxLength={stepData.maxLength || 50}
+              //     />
+              //     <Text style={styles.cardText}>{t('firstname.long_term_partner')}</Text>
 
-              <TouchableOpacity
-                style={[styles.lookingForCard, lookingFor === 'Work out Partner' && styles.lookingForCardSelected]}
-                onPress={() => {
-                  setLookingFor('Work out Partner');
-                }}>
-                <Image
-                  source={require('../../Assets/images/dumb.png')}
-                  style={styles.cardImage}
-                  resizeMode="contain"
-                />
-                <Text style={styles.cardText}>{t('firstname.workout_partner')}</Text>
-              </TouchableOpacity>
+              //     <TouchableOpacity
+              //       style={[styles.lookingForCard, lookingFor === 'Work out Partner' && styles.lookingForCardSelected]}
+              //       onPress={() => {
+              //         setLookingFor('Work out Partner');
+              //       }}>
+              //       <Image
+              //         source={require('../../Assets/images/dumb.png')}
+              //         style={styles.cardImage}
+              //         resizeMode="contain"
+              //       />
+              //       <Text style={styles.cardText}>{t('firstname.workout_partner')}</Text>
+              //     </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.lookingForCard, lookingFor === 'Looking for Both' && styles.lookingForCardSelected]}
-                onPress={() => {
-                  setLookingFor('Looking for Both');
-                }}>
-                <Image
-                  source={require('../../Assets/images/emoji.png')}
-                  style={styles.cardImage}
-                  resizeMode="contain"
-                />
-                <Text style={styles.cardText}>{t('firstname.looking_for_both')}</Text>
-              </TouchableOpacity>
-            </View>
-          ) : stepData.isInterestedStep ? (
-            <View>
-              {stepData.subtitle}
+              //     <TouchableOpacity
+              //       style={[styles.lookingForCard, lookingFor === 'Looking for Both' && styles.lookingForCardSelected]}
+              //       onPress={() => {
+              //         setLookingFor('Looking for Both');
+              //       }}>
+              //       <Image
+              //         source={require('../../Assets/images/emoji.png')}
+              //         style={styles.cardImage}
+              //         resizeMode="contain"
+              //       />
+              //       <Text style={styles.cardText}>{t('firstname.looking_for_both')}</Text>
+              //     </TouchableOpacity>
+              //   </View>
+              // ) 
+              : stepData.isInterestedStep ?
+                (
+                  <View>
+                    {stepData.subtitle}
 
-              <TouchableOpacity
-                style={styles.genderOption}
-                onPress={() => setInterestedIn('Man')}>
-                <Text style={styles.genderText}>{t('firstname.man')}</Text>
-                <View style={[styles.radioButton, interestedIn === 'Man' && styles.radioButtonSelected]}>
-                  {interestedIn === 'Man' && <View style={styles.radioButtonInner} />}
-                </View>
-              </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.genderOption}
+                      onPress={() => setInterestedIn('Man')}>
+                      <Text style={styles.genderText}>{t('firstname.man')}</Text>
+                      <View style={[styles.radioButton, interestedIn === 'Man' && styles.radioButtonSelected]}>
+                        {interestedIn === 'Man' && <View style={styles.radioButtonInner} />}
+                      </View>
+                    </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.genderOption}
-                onPress={() => setInterestedIn('Woman')}>
-                <Text style={styles.genderText}>{t('firstname.woman')}</Text>
-                <View style={[styles.radioButton, interestedIn === 'Woman' && styles.radioButtonSelected]}>
-                  {interestedIn === 'Woman' && <View style={styles.radioButtonInner} />}
-                </View>
-              </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.genderOption}
+                      onPress={() => setInterestedIn('Woman')}>
+                      <Text style={styles.genderText}>{t('firstname.woman')}</Text>
+                      <View style={[styles.radioButton, interestedIn === 'Woman' && styles.radioButtonSelected]}>
+                        {interestedIn === 'Woman' && <View style={styles.radioButtonInner} />}
+                      </View>
+                    </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.genderOption}
-                onPress={() => setInterestedIn('Every one')}>
-                <Text style={styles.genderText}>{t('firstname.everyone')}</Text>
-                <View style={[styles.radioButton, interestedIn === 'Every one' && styles.radioButtonSelected]}>
-                  {interestedIn === 'Every one' && <View style={styles.radioButtonInner} />}
-                </View>
-              </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.genderOption}
+                      onPress={() => setInterestedIn('Every one')}>
+                      <Text style={styles.genderText}>{t('firstname.everyone')}</Text>
+                      <View style={[styles.radioButton, interestedIn === 'Every one' && styles.radioButtonSelected]}>
+                        {interestedIn === 'Every one' && <View style={styles.radioButtonInner} />}
+                      </View>
+                    </TouchableOpacity>
 
-              <TouchableOpacity style={styles.learnMoreButton}>
-                {/* <Text style={styles.learnMoreText}>Learn how Fit & Meet uses this info</Text> */}
-              </TouchableOpacity>
-            </View>
-          ) : stepData.isBirthdayStep ? (
-            <View>
-              <TouchableOpacity
-                style={styles.datePickerButton}
-                onPress={() => setDatePickerOpen(true)}>
-                <Text style={[
-                  styles.datePickerText,
-                  !birthday && styles.datePickerPlaceholder
-                ]}>
-                  {birthday || stepData.placeholder}
-                </Text>
-                <Text style={styles.calendarIcon}>📅</Text>
-              </TouchableOpacity>
-              {stepData.subtitle}
+                    <TouchableOpacity style={styles.learnMoreButton}>
+                      {/* <Text style={styles.learnMoreText}>Learn how Fit & Meet uses this info</Text> */}
+                    </TouchableOpacity>
+                  </View>
+                ) : stepData.isBirthdayStep ? (
+                  <View>
+                    <TouchableOpacity
+                      style={styles.datePickerButton}
+                      onPress={() => setDatePickerOpen(true)}>
+                      <Text style={[
+                        styles.datePickerText,
+                        !birthday && styles.datePickerPlaceholder
+                      ]}>
+                        {birthday || stepData.placeholder}
+                      </Text>
+                      <Text style={styles.calendarIcon}>📅</Text>
+                    </TouchableOpacity>
+                    {stepData.subtitle}
 
-              <DatePicker
+                    {/* <DatePicker
                 modal
                 open={datePickerOpen}
                 date={selectedDate}
@@ -811,41 +792,43 @@ const FirstName = ({ navigation }) => {
                 title={t('firstname.select_birthday')}
                 confirmText={t('firstname.confirm')}
                 cancelText={t('firstname.cancel')}
-              />
-            </View>
-          ) : (
-            <View>
-              <TextInput
-                style={styles.input}
-                value={stepData.value}
-                onChangeText={stepData.onChangeText}
-                placeholder={stepData.placeholder}
-                placeholderTextColor="#CCCCCC"
-                keyboardType={stepData.keyboardType || 'default'}
-                maxLength={stepData.maxLength || 50}
-              />
-              {stepData.subtitle}
-            </View>
-          )}
+              /> */}
+                  </View>
+                ) : (
+                  <View>
+                    <TextInput
+                      style={styles.input}
+                      value={stepData.value}
+                      onChangeText={stepData.onChangeText}
+                      placeholder={stepData.placeholder}
+                      placeholderTextColor="#CCCCCC"
+                      keyboardType={stepData.keyboardType || 'default'}
+                      maxLength={stepData.maxLength || 50}
+                    />
+                    {stepData.subtitle}
+                  </View>
+                )
+          }
         </View>
-      </ScrollView>
+      </ScrollView >
 
       {/* Next Button */}
-      <View style={styles.buttonContainer}>
+      < View style={styles.buttonContainer} >
         <TouchableOpacity
           style={[
             styles.nextButton,
             (isNextDisabled || uploading) && styles.nextButtonDisabled,
           ]}
           onPress={handleNext}
-          disabled={isNextDisabled || uploading}>
+          disabled={isNextDisabled || uploading}
+        >
           {uploading ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
             <Text style={styles.nextButtonText}>{t('firstname.next_button')}</Text>
           )}
         </TouchableOpacity>
-      </View>
+      </View >
 
       <CameraGalleryPicker
         refs={cameraGalleryRef}
@@ -860,7 +843,42 @@ const FirstName = ({ navigation }) => {
         quality={0.8}
         base64={false}
       />
-    </View>
+
+      {
+        Platform.OS === 'ios' && <CustomeModal
+          confirmButtonColor='#FF3B6D'
+          confirmButtonName={t('firstname.confirm')}
+          cancelButtonName={t('firstname.cancel')}
+          title={t('firstname.select_birthday')}
+          titleColor='#FF3B6D'
+          onCancel={() => { console.log('Canceled'); setDatePickerOpen(false) }}
+          onConfirm={() => { console.log('Confirmed'); setDatePickerOpen(false) }}
+          open={datePickerOpen}
+        >
+          <RNDateTimePicker
+            value={selectedDate}
+            mode="date"
+            maximumDate={new Date()}
+            minimumDate={new Date(1950, 0, 1)}
+            display='spinner'
+            onChange={handleDateConfirm}
+            title="Select your birthday" />
+        </CustomeModal>
+      }
+
+      {
+        Platform.OS === 'android' && datePickerOpen && <RNDateTimePicker
+          value={selectedDate}
+          mode="date"
+          maximumDate={new Date()}
+          minimumDate={new Date(1950, 0, 1)}
+          display='default'
+          onChange={handleDateConfirm}
+          title="Select your birthday"
+        />
+      }
+
+    </View >
   );
 };
 
@@ -883,7 +901,7 @@ const styles = StyleSheet.create({
   progressBar: {
     height: 3,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    marginTop: 50,
+    marginTop: Platform.OS === 'android' ? 50 : 20,
   },
   progressFill: {
     height: '100%',

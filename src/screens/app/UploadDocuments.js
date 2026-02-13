@@ -1,4 +1,4 @@
-import React, {useState, useRef, useContext} from 'react';
+import React, { useState, useRef, useContext } from 'react';
 import {
   View,
   Text,
@@ -9,21 +9,24 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
 import CameraGalleryPicker from '../../components/CameraGalleryPeacker';
-import {useTranslation} from 'react-i18next';
-import {AuthContext} from '../../../App';
+import { useTranslation } from 'react-i18next';
+import { AuthContext } from '../../../App';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const UploadDocuments = ({navigation}) => {
-  const {logout} = useContext(AuthContext);
+const UploadDocuments = ({ navigation }) => {
+  const { logout } = useContext(AuthContext);
   const [idDocument, setIdDocument] = useState(null);
   const [gymDocument, setGymDocument] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [currentUploadType, setCurrentUploadType] = useState(null);
-  const {t} = useTranslation();
-  
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets()
+
   const cameraGalleryRef = useRef(null);
 
   const handleClose = async () => {
@@ -43,7 +46,7 @@ const UploadDocuments = ({navigation}) => {
 
   const handleImageSelected = async (response) => {
     console.log('Image selected:', response);
-    
+
     if (!response || !response.assets || !response.assets[0]) {
       console.log('No image selected');
       return;
@@ -121,7 +124,7 @@ const UploadDocuments = ({navigation}) => {
         console.log('=== DOCUMENTS UPLOADED SUCCESSFULLY ===');
         console.log('Next Step:', response.nextStep);
         console.log('User Step:', response.user?.currentStep);
-        
+
         Alert.alert(
           t('uploaddocuments.documents_uploaded'),
           t('uploaddocuments.documents_uploaded_message'),
@@ -152,19 +155,15 @@ const UploadDocuments = ({navigation}) => {
 
   return (
     <LinearGradient colors={['#61203C', '#140D1F']} style={styles.container}>
-      <StatusBar
-        backgroundColor="#61203C"
-        barStyle="light-content"
-        translucent={false}
-      />
 
-      <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+
+      <TouchableOpacity style={[styles.closeButton, { top: Platform.OS === 'android' ? insets.top : 10 }]} onPress={handleClose}>
         <View style={styles.closeIcon}>
           <Text style={styles.closeText}>✕</Text>
         </View>
       </TouchableOpacity>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -181,7 +180,7 @@ const UploadDocuments = ({navigation}) => {
           <TouchableOpacity style={styles.uploadBox} onPress={handleUploadID} disabled={uploading}>
             {idDocument ? (
               <Image
-                source={{uri: idDocument.uri}}
+                source={{ uri: idDocument.uri }}
                 style={styles.uploadedImage}
                 resizeMode="cover"
               />
@@ -208,7 +207,7 @@ const UploadDocuments = ({navigation}) => {
             disabled={uploading}>
             {gymDocument ? (
               <Image
-                source={{uri: gymDocument.uri}}
+                source={{ uri: gymDocument.uri }}
                 style={styles.uploadedImage}
                 resizeMode="cover"
               />
@@ -236,8 +235,8 @@ const UploadDocuments = ({navigation}) => {
           )}
         </View>
 
-        <TouchableOpacity 
-          style={[styles.nextButton, (!idDocument || !gymDocument || uploading) && styles.nextButtonDisabled]} 
+        <TouchableOpacity
+          style={[styles.nextButton, (!idDocument || !gymDocument || uploading) && styles.nextButtonDisabled]}
           onPress={handleNext}
           disabled={!idDocument || !gymDocument || uploading}>
           <Text style={styles.nextButtonText}>{t('uploaddocuments.next_button')}</Text>
@@ -267,7 +266,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 60,
+    // top: 60,
     left: 20,
     zIndex: 10,
   },
@@ -293,7 +292,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 120,
+    paddingTop: Platform.OS === 'android' ? 80 : 60,
   },
   title: {
     fontSize: 22,

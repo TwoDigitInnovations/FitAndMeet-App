@@ -134,7 +134,6 @@ function App() {
       <SafeAreaProvider>
         <SafeAreaView style={styles.container} edges={Platform.OS === 'ios' ? ['left', 'right',] : ['left', 'right']}>
           <StatusBar barStyle="light-content" backgroundColor="#010918" translucent />
-
           <View style={styles.splashContainer}>
             <Image
               source={require('./src/Assets/images/newlogo.png')}

@@ -9,6 +9,7 @@ export const Currency = '$';
 
 const Constants = {
   baseUrl: apiUrl,
+  mainTheme: '#5D1F3A',
   black: '#000000',
   customblack: '#1E1E1E',
   white: '#FFFFFF',

@@ -1,4 +1,4 @@
-import React, {useState, useRef, useEffect, useContext} from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -18,12 +18,15 @@ import {
 } from 'react-native';
 import { setAuthToken, getAuthToken } from '../../utils/storage';
 import apiService from '../../services/apiService';
-import CountryPicker from 'react-native-country-picker-modal';
 import RegistrationProgressModal from '../../components/RegistrationProgressModal';
 import { AuthContext } from '../../../App';
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import PhoneInput, {
+  ICountry,
+  isValidPhoneNumber,
+} from 'react-native-international-phone-number';
 
-const SignIn = ({navigation}) => {
+const SignIn = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [showOTP, setShowOTP] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '']);
@@ -40,7 +43,13 @@ const SignIn = ({navigation}) => {
 
   // Get authentication functions from context
   const { handleLoginSuccess } = useContext(AuthContext);
-  const {t} = useTranslation();
+  const { t } = useTranslation();
+  const [selectedCountry, setSelectedCountry] = useState(null);
+
+  function handleSelectedCountry(country) {
+    console.log(country)
+    setSelectedCountry(country);
+  }
 
   // Country-specific phone number lengths
   const getPhoneLength = (country) => {
@@ -76,16 +85,22 @@ const SignIn = ({navigation}) => {
     console.log('Phone Number:', phoneNumber);
     console.log('Country Code:', countryCode);
     console.log('Calling Code:', callingCode);
-    
+
     const expectedLength = getPhoneLength(countryCode);
-    console.log('Expected Length:', expectedLength);
-    console.log('Actual Length:', phoneNumber.length);
-    
-    if (phoneNumber.length !== expectedLength) {
+
+    const isValid = isValidPhoneNumber(
+      phoneNumber,
+      selectedCountry
+    );
+    console.log('Expected Length:', phoneNumber);
+    console.log('Actual Length:', selectedCountry);
+    console.log('isValid:', isValid);
+
+    if (!isValid) {
       console.log('ERROR: Invalid phone number length');
       Alert.alert(
-        t('auth.otp.invalid_phone'), 
-        t('auth.otp.invalid_phone_message', {length: expectedLength})
+        t('auth.otp.invalid_phone'),
+        t('auth.otp.invalid_phone_message', { length: expectedLength })
       );
       return;
     }
@@ -97,10 +112,10 @@ const SignIn = ({navigation}) => {
         countryCode: `+${callingCode}`,
         isSignIn: true,
       };
-      
+
       console.log('=== SENDING REQUEST ===');
       console.log('Request Data:', JSON.stringify(requestData, null, 2));
-      
+
       const response = await apiService.PostPublic('api/auth/send-otp', requestData);
 
       console.log('=== RECEIVED RESPONSE ===');
@@ -116,15 +131,15 @@ const SignIn = ({navigation}) => {
         console.log('Error Message:', response.message);
         console.log('Requires Registration:', response.requiresRegistration);
         console.log('Next Screen:', response.nextScreen);
-        
+
         if (response.requiresRegistration) {
           // Handle incomplete profile case - show OTP first
           console.log('=== INCOMPLETE PROFILE DETECTED ===');
           console.log('Setting up OTP screen for incomplete profile');
-          
+
           setUserId(response.userId);
           setShowOTP(true);
-          
+
           // Store registration data for after OTP verification
           setRegistrationData({
             currentStep: response.currentStep || 0,
@@ -132,9 +147,9 @@ const SignIn = ({navigation}) => {
             stepDescription: response.message || 'Complete your registration',
             nextScreen: response.nextScreen || 'SelectGym'
           });
-          
+
           Alert.alert(
-            'Profile Incomplete', 
+            'Profile Incomplete',
             `${response.message}\n\nPlease verify OTP first, then continue registration.`,
             [{ text: 'OK' }]
           );
@@ -153,7 +168,7 @@ const SignIn = ({navigation}) => {
 
   const handleOtpChange = async (value, index) => {
     if (value.length > 1) return;
-    
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
@@ -176,7 +191,7 @@ const SignIn = ({navigation}) => {
       console.log('=== VERIFY OTP DEBUG ===');
       console.log('Phone Number:', phoneNumber);
       console.log('OTP Code:', otpCode);
-      
+
       const response = await apiService.PostPublic('api/auth/verify-otp', {
         phoneNumber,
         otp: otpCode,
@@ -193,7 +208,7 @@ const SignIn = ({navigation}) => {
       if (response.success) {
         // Store token using proper storage utility
         const tokenSaved = await setAuthToken(response.token);
-        
+
         if (!tokenSaved) {
           Alert.alert('Error', 'Failed to save authentication token');
           return;
@@ -203,25 +218,25 @@ const SignIn = ({navigation}) => {
         const savedToken = await getAuthToken();
         console.log('Token saved successfully:', savedToken ? 'Yes' : 'No');
 
-       
+
         if (response.user.profileCompleted) {
           // Profile is complete, set authentication state
           if (handleLoginSuccess) {
             handleLoginSuccess(response.user);
           }
-          
+
           // Small delay to ensure state is updated, then navigate
           setTimeout(() => {
             // Navigation will happen automatically when isAuthenticated changes
             // The AppNavigate will check profileCompleted flag and go to TabNav
           }, 100);
         } else {
-         
+
           const nextScreen = registrationData?.nextScreen || response.nextScreen || 'SelectGym';
           const progressPercent = registrationData?.progressPercent || response.progressPercent || 0;
-   
+
           setRegistrationData(null);
-     
+
           navigation.navigate(nextScreen);
           setTimeout(() => {
             Alert.alert(
@@ -232,16 +247,16 @@ const SignIn = ({navigation}) => {
           }, 100);
         }
       } else {
-   
+
         if (response.requiresRegistration) {
-      
+
           const nextScreen = registrationData?.nextScreen || response.nextScreen || 'SelectGym';
           const progressPercent = registrationData?.progressPercent || response.progressPercent || 0;
           setRegistrationData(null);
-        
-       
+
+
           navigation.navigate(nextScreen);
-        
+
           setTimeout(() => {
             Alert.alert(
               'Profile Incomplete',
@@ -256,7 +271,7 @@ const SignIn = ({navigation}) => {
         }
       }
     } catch (error) {
-   
+
       console.error('Error details:', error);
       Alert.alert(t('auth.otp.error'), t('auth.otp.failed_verify_otp'));
       setOtp(['', '', '', '']);
@@ -275,7 +290,7 @@ const SignIn = ({navigation}) => {
   const handleProgressModalClose = () => {
     setShowProgressModal(false);
     setRegistrationData(null);
-   
+
     navigation.goBack();
   };
 
@@ -289,7 +304,7 @@ const SignIn = ({navigation}) => {
 
   const handleResendOTP = async () => {
     if (timer > 0) return;
-    
+
     setLoading(true);
     try {
       const response = await apiService.PostPublic('api/auth/send-otp', {
@@ -317,7 +332,7 @@ const SignIn = ({navigation}) => {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar backgroundColor="#010918" barStyle="light-content" translucent={false} />
-        
+
         <Image
           source={require('../../Assets/images/img4.png')}
           style={styles.image}
@@ -393,7 +408,7 @@ const SignIn = ({navigation}) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#010918" barStyle="light-content" translucent={false} />
-      
+
       <Image
         source={require('../../Assets/images/img4.png')}
         style={styles.image}
@@ -428,7 +443,7 @@ const SignIn = ({navigation}) => {
               <Text style={styles.subtitle}>{t('auth.signin.subtitle')}</Text>
 
               <View style={styles.phoneContainer}>
-                <TouchableOpacity 
+                {/* <TouchableOpacity 
                   style={styles.countryCode}
                   onPress={() => setShowCountryPicker(true)}>
                   <CountryPicker
@@ -457,11 +472,19 @@ const SignIn = ({navigation}) => {
                   onChangeText={setPhoneNumber}
                   onSubmitEditing={handlePhoneSubmit}
                   maxLength={phoneLength}
+                /> */}
+                <PhoneInput
+                  value={phoneNumber}
+                  onChangePhoneNumber={setPhoneNumber}
+                  selectedCountry={selectedCountry}
+                  onChangeSelectedCountry={handleSelectedCountry}
+                  returnKeyType="go"
+                  onSubmitEditing={handlePhoneSubmit}
                 />
               </View>
 
-              <TouchableOpacity 
-                style={[styles.signInButton, loading && styles.signInButtonDisabled]} 
+              <TouchableOpacity
+                style={[styles.signInButton, loading && styles.signInButtonDisabled]}
                 onPress={handlePhoneSubmit}
                 disabled={loading}>
                 {loading ? (

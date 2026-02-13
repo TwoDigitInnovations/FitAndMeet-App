@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,22 +15,26 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
-import DatePicker from 'react-native-date-picker';
 import CameraGalleryPicker from '../../components/CameraGalleryPeacker';
-import {useTranslation} from 'react-i18next';
-import {useFocusEffect} from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/native';
+import RNDateTimePicker from '@react-native-community/datetimepicker';
+import CustomeModal from '../../components/CustomeModal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const {height} = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 const isSmallScreen = height < 700;
 const topPadding = isSmallScreen ? 35 : 50;
 
-const EditProfile = ({navigation}) => {
-  const {t} = useTranslation();
+
+const EditProfile = ({ navigation }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [userData, setUserData] = useState(null);
-  
+  const insets = useSafeAreaInsets();
+
   // Form fields
   const [firstName, setFirstName] = useState('');
   const [birthday, setBirthday] = useState('');
@@ -44,13 +48,13 @@ const EditProfile = ({navigation}) => {
   const [bio, setBio] = useState('');
   const [photos, setPhotos] = useState([]);
   const [gymName, setGymName] = useState('');
-  
+
   // Modal states
   const [showGenderModal, setShowGenderModal] = useState(false);
   const [showInterestedModal, setShowInterestedModal] = useState(false);
   const [showLookingForModal, setShowLookingForModal] = useState(false);
   const [showAgeRangeModal, setShowAgeRangeModal] = useState(false);
-  
+
   const cameraGalleryRef = useRef(null);
 
   useEffect(() => {
@@ -68,11 +72,11 @@ const EditProfile = ({navigation}) => {
     try {
       setLoading(true);
       const response = await apiService.GetApi('api/auth/profile');
-      
+
       if (response.success) {
         const user = response.user;
         setUserData(user);
-        
+
         // Populate form fields
         setFirstName(user.firstName || '');
         setBirthday(user.birthday || '');
@@ -96,9 +100,9 @@ const EditProfile = ({navigation}) => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      
+
       const age = birthday ? calculateAge(birthday) : userData?.age;
-      
+
       const updates = {
         firstName,
         birthday,
@@ -114,7 +118,7 @@ const EditProfile = ({navigation}) => {
       };
 
       const response = await apiService.Put('api/profile/update', updates);
-      
+
       if (response.success) {
         Alert.alert(
           t('editprofile.profile_updated'),
@@ -153,7 +157,7 @@ const EditProfile = ({navigation}) => {
     setSelectedDate(date);
     const formattedDate = formatDate(date);
     setBirthday(formattedDate);
-    setDatePickerOpen(false);
+    // setDatePickerOpen(false);
   };
 
   const formatDate = (date) => {
@@ -187,7 +191,7 @@ const EditProfile = ({navigation}) => {
   const handlePhotoUpload = async (imageAsset) => {
     try {
       setUploading(true);
-      
+
       const response = await apiService.UploadFile(
         imageAsset.uri,
         imageAsset.fileName || `photo_${Date.now()}.jpg`,
@@ -202,7 +206,7 @@ const EditProfile = ({navigation}) => {
           publicId: response.file.publicId,
           uploadedAt: new Date()
         };
-        
+
         setPhotos([...photos, newPhoto]);
         // Success - photo will be visible immediately
         console.log('Photo added successfully:', newPhoto.url);
@@ -272,9 +276,9 @@ const EditProfile = ({navigation}) => {
       locations={[0, 0.4, 0.9, 1]}
       style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#571D38" />
-      
+
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Platform.OS === 'android' && insets.top + 10 }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity
             style={styles.backButton}
@@ -302,7 +306,7 @@ const EditProfile = ({navigation}) => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        
+
         {/* Profile Strength */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('editprofile.profile_strength')}</Text>
@@ -323,8 +327,8 @@ const EditProfile = ({navigation}) => {
           <View style={styles.photosGrid}>
             {photos.slice(0, 6).map((photo, index) => (
               <View key={index} style={styles.photoItem}>
-                <Image source={{uri: photo.url}} style={styles.photoImage} />
-                <TouchableOpacity 
+                <Image source={{ uri: photo.url }} style={styles.photoImage} />
+                <TouchableOpacity
                   style={styles.removePhotoButton}
                   onPress={() => handleRemovePhoto(index)}>
                   <Text style={styles.removePhotoText}>×</Text>
@@ -332,7 +336,7 @@ const EditProfile = ({navigation}) => {
               </View>
             ))}
             {photos.length < 6 && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.addPhotoButton}
                 onPress={handleAddPhoto}
                 disabled={uploading}>
@@ -388,8 +392,8 @@ const EditProfile = ({navigation}) => {
         {/* About You */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('editprofile.about_you')}</Text>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.infoRow}
             onPress={() => setShowGenderModal(true)}>
             <View style={styles.infoLeft}>
@@ -399,10 +403,10 @@ const EditProfile = ({navigation}) => {
               />
               <Text style={styles.infoLabel}>{t('editprofile.gender')}</Text>
             </View>
-      
+
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.infoRow}
             onPress={() => setDatePickerOpen(true)}>
             <View style={styles.infoLeft}>
@@ -412,10 +416,10 @@ const EditProfile = ({navigation}) => {
               />
               <Text style={styles.infoLabel}>{t('editprofile.birthday')}</Text>
             </View>
-     
+
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.infoRow}
             onPress={() => navigation.navigate('SelectGym', { fromEdit: true })}>
             <View style={styles.infoLeft}>
@@ -425,7 +429,7 @@ const EditProfile = ({navigation}) => {
               />
               <Text style={styles.infoLabel}>{t('editprofile.gym')}</Text>
             </View>
-       
+
           </TouchableOpacity>
         </View>
 
@@ -433,8 +437,8 @@ const EditProfile = ({navigation}) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('editprofile.more_about_you')}</Text>
           <Text style={styles.sectionSubtitle}>{t('editprofile.more_about_you_subtitle')}</Text>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.infoRow}
             onPress={() => setShowInterestedModal(true)}>
             <View style={styles.infoLeft}>
@@ -444,10 +448,10 @@ const EditProfile = ({navigation}) => {
               />
               <Text style={styles.infoLabel}>{t('editprofile.interested_in')}</Text>
             </View>
-     
+
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.infoRow}
             onPress={() => setShowLookingForModal(true)}>
             <View style={styles.infoLeft}>
@@ -457,10 +461,10 @@ const EditProfile = ({navigation}) => {
               />
               <Text style={styles.infoLabel}>{t('editprofile.looking_for')}</Text>
             </View>
-       
+
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.infoRow}
             onPress={() => setShowAgeRangeModal(true)}>
             <View style={styles.infoLeft}>
@@ -470,15 +474,15 @@ const EditProfile = ({navigation}) => {
               />
               <Text style={styles.infoLabel}>{t('editprofile.age_range')}</Text>
             </View>
-            
+
           </TouchableOpacity>
         </View>
 
-        <View style={{height: 50}} />
+        <View style={{ height: 50 }} />
       </ScrollView>
 
       {/* Date Picker Modal */}
-      <DatePicker
+      {/* <DatePicker
         modal
         open={datePickerOpen}
         date={selectedDate}
@@ -486,7 +490,26 @@ const EditProfile = ({navigation}) => {
         onConfirm={handleDateConfirm}
         onCancel={() => setDatePickerOpen(false)}
         maximumDate={new Date()}
-      />
+      /> */}
+
+      <CustomeModal
+        confirmButtonColor='#FF3B6D'
+        confirmButtonName={t('firstname.confirm')}
+        cancelButtonName={t('firstname.cancel')}
+        title={t('firstname.select_birthday')}
+        titleColor='#FF3B6D'
+        onCancel={() => { console.log('Canceled'); setDatePickerOpen(false) }}
+        onConfirm={() => { console.log('Confirmed'); setDatePickerOpen(false) }}
+        open={datePickerOpen}
+      >
+        <RNDateTimePicker
+          value={selectedDate}
+          mode="date"
+          maximumDate={new Date()}
+          display='spinner'
+          onChange={handleDateConfirm}
+          title="Select your birthday" />
+      </CustomeModal>
 
       {/* Gender Selection Modal */}
       <Modal
@@ -498,9 +521,9 @@ const EditProfile = ({navigation}) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{t('editprofile.select_gender')}</Text>
             {[
-              {key: 'Man', label: t('editprofile.man')},
-              {key: 'Woman', label: t('editprofile.woman')},
-              {key: 'Other', label: t('editprofile.other')}
+              { key: 'Man', label: t('editprofile.man') },
+              { key: 'Woman', label: t('editprofile.woman') },
+              { key: 'Other', label: t('editprofile.other') }
             ].map((option) => (
               <TouchableOpacity
                 key={option.key}
@@ -539,9 +562,9 @@ const EditProfile = ({navigation}) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{t('editprofile.interested_in_title')}</Text>
             {[
-              {key: 'Man', label: t('editprofile.man')},
-              {key: 'Woman', label: t('editprofile.woman')},
-              {key: 'Every one', label: t('editprofile.everyone')}
+              { key: 'Man', label: t('editprofile.man') },
+              { key: 'Woman', label: t('editprofile.woman') },
+              { key: 'Every one', label: t('editprofile.everyone') }
             ].map((option) => (
               <TouchableOpacity
                 key={option.key}
@@ -580,9 +603,9 @@ const EditProfile = ({navigation}) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{t('editprofile.looking_for_title')}</Text>
             {[
-              {key: 'Long-term Partner', label: t('editprofile.long_term_partner')},
-              {key: 'Work out Partner', label: t('editprofile.workout_partner')},
-              {key: 'Looking for Both', label: t('editprofile.looking_for_both')}
+              { key: 'Long-term Partner', label: t('editprofile.long_term_partner') },
+              { key: 'Work out Partner', label: t('editprofile.workout_partner') },
+              { key: 'Looking for Both', label: t('editprofile.looking_for_both') }
             ].map((option) => (
               <TouchableOpacity
                 key={option.key}
@@ -621,10 +644,10 @@ const EditProfile = ({navigation}) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{t('editprofile.age_range_title')}</Text>
             {[
-              {key: '18-25', label: t('editprofile.age_18_25')},
-              {key: '25-35', label: t('editprofile.age_25_35')},
-              {key: '35-45', label: t('editprofile.age_35_45')},
-              {key: '45-Over', label: t('editprofile.age_45_over')}
+              { key: '18-25', label: t('editprofile.age_18_25') },
+              { key: '25-35', label: t('editprofile.age_25_35') },
+              { key: '35-45', label: t('editprofile.age_35_45') },
+              { key: '45-Over', label: t('editprofile.age_45_over') }
             ].map((option) => (
               <TouchableOpacity
                 key={option.key}
@@ -653,10 +676,10 @@ const EditProfile = ({navigation}) => {
         </View>
       </Modal>
 
-      <CameraGalleryPicker 
+      <CameraGalleryPicker
         refs={cameraGalleryRef}
         getImageValue={handlePhotoSelected}
-        cancel={() => {}}
+        cancel={() => { }}
         base64={false}
         quality={0.8}
         maxWidth={1024}
@@ -716,7 +739,7 @@ const styles = StyleSheet.create({
     color: '#FF3B6D',
     fontSize: 14,
     fontWeight: '600',
-    
+
   },
   scrollView: {
     flex: 1,

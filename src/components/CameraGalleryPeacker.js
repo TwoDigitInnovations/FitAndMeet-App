@@ -9,8 +9,9 @@ import {
 } from 'react-native';
 import React from 'react';
 import { check, PERMISSIONS, RESULTS, request } from 'react-native-permissions';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+// import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import Constants from '../utils/Constant';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 
 const CameraGalleryPicker = (props) => {
   const [visible, setVisible] = React.useState(false);
@@ -73,9 +74,11 @@ const CameraGalleryPicker = (props) => {
         : PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE;
 
       const result = await check(permission);
-
+      console.log(result)
       if (result === RESULTS.GRANTED) {
-        type()
+        setTimeout(() => {
+          type();
+        }, 500);
         console.log('Permission already granted');
         return;
       }
@@ -85,10 +88,14 @@ const CameraGalleryPicker = (props) => {
 
         if (permissionResult === RESULTS.GRANTED) {
           console.log('Permission granted');
-          type()
+          setTimeout(() => {
+            type();
+          }, 500);
         } else {
           console.log('Permission denied');
-          type()
+          setTimeout(() => {
+            type();
+          }, 500);
         }
       }
     } catch (error) {
@@ -105,14 +112,14 @@ const CameraGalleryPicker = (props) => {
         setVisible(false);
         props?.cancel();
       }}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.modalOverlay}
         activeOpacity={1}
         onPress={() => {
           setVisible(false);
           props?.cancel();
         }}>
-        <TouchableOpacity 
+        <TouchableOpacity
           activeOpacity={1}
           style={[styles.modalContent, { backgroundColor: props.backgroundColor || '#FFFFFF' }]}>
           <View style={{ paddingHorizontal: 20, paddingVertical: 30 }}>
@@ -127,7 +134,7 @@ const CameraGalleryPicker = (props) => {
                 Choose your photo
               </Text>
             </View>
-            
+
             <TouchableOpacity
               style={{ flexDirection: 'row', width: '100%', paddingVertical: 12 }}
               onPress={() => {
@@ -153,6 +160,7 @@ const CameraGalleryPicker = (props) => {
                 onPress={() => {
                   setVisible(false);
                   requestMediaPermission(launchImageLibrarys);
+
                 }}>
                 <View style={{ marginLeft: 10 }}>
                   <Text

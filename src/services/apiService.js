@@ -374,12 +374,15 @@ const UploadFile = async (fileUri, fileName, fileType) => {
 
       // Remove file:// prefix for Android
       let filePath = fileUri;
-      if (Platform.OS === 'android' && filePath.startsWith('file://')) {
+      // if (Platform.OS === 'android' && filePath.startsWith('file://')) {
+      //   filePath = filePath.replace('file://', '');
+      // }
+      // console.log(filePath)
+
+      if (filePath.startsWith('file://')) {
         filePath = filePath.replace('file://', '');
       }
-      console.log(filePath
 
-      )
       try {
         const response = await ReactNativeBlobUtil.fetch(
           'POST',

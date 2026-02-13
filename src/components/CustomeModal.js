@@ -99,7 +99,7 @@ const CustomeModal = (props) => {
                                             fontWeight: '500',
                                             textAlign: 'right',
                                         }}>
-                                        CANCEL
+                                        {props?.cancelButtonName || 'CANCEL'}
                                     </Text>
                                 </View>
                             </TouchableOpacity>
