@@ -15,13 +15,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		13B07F961A680F5B00A75B9A /* FITANDMEET.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FITANDMEET.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = "FITANDMEET/Images.xcassets"; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = "FITANDMEET/Info.plist"; sourceTree = "<group>"; };
+		13B07F961A680F5B00A75B9A /* FITANDMEET.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FITANDMEET.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = FITANDMEET/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = FITANDMEET/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = FITANDMEET/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		5AAF218C860F956338D0D740 /* Pods-FITANDMEET.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FITANDMEET.debug.xcconfig"; path = "Target Support Files/Pods-FITANDMEET/Pods-FITANDMEET.debug.xcconfig"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = FITANDMEET/AppDelegate.swift; sourceTree = "<group>"; };
-		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = "FITANDMEET/LaunchScreen.storyboard"; sourceTree = "<group>"; };
+		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = FITANDMEET/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		82D16F420FC978F69815C29E /* libPods-FITANDMEET.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FITANDMEET.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E499595D082C97F27C2A79E2 /* Pods-FITANDMEET.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FITANDMEET.release.xcconfig"; path = "Target Support Files/Pods-FITANDMEET/Pods-FITANDMEET.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -48,7 +48,7 @@
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 			);
-			name = "FITANDMEET";
+			name = FITANDMEET;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
@@ -117,8 +117,8 @@
 			);
 			dependencies = (
 			);
-			name = "FITANDMEET";
-			productName = "FITANDMEET";
+			name = FITANDMEET;
+			productName = FITANDMEET;
 			productReference = 13B07F961A680F5B00A75B9A /* FITANDMEET.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -261,8 +261,8 @@
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_BITCODE = NO;
-				INFOPLIST_FILE = "FITANDMEET/Info.plist";
-             INFOPLIST_KEY_CFBundleDisplayName = "FIT AND MEET";
+				INFOPLIST_FILE = FITANDMEET/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "FIT AND MEET";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -274,8 +274,8 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.fitandmeet.app";
-				PRODUCT_NAME = "FITANDMEET";
+				PRODUCT_BUNDLE_IDENTIFIER = com.fitandmeet.app;
+				PRODUCT_NAME = FITANDMEET;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -289,8 +289,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				INFOPLIST_FILE = "FITANDMEET/Info.plist";
-             INFOPLIST_KEY_CFBundleDisplayName = "FIT AND MEET";
+				INFOPLIST_FILE = FITANDMEET/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "FIT AND MEET";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -302,8 +302,8 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.fitandmeet.app";
-				PRODUCT_NAME = "FITANDMEET";
+				PRODUCT_BUNDLE_IDENTIFIER = com.fitandmeet.app;
+				PRODUCT_NAME = FITANDMEET;
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
