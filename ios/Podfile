@@ -35,7 +35,7 @@ if linkage != nil
   use_frameworks! :linkage => linkage.to_sym
 end
 
-target 'datingapp' do
+target 'FITANDMEET' do
   config = use_native_modules!
 
 pod 'react-native-blob-util',
