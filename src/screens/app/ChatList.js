@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import {getCurrentUserId} from '../../utils/tokenUtils';
 import {migrateChatDataToUserSpecific} from '../../utils/chatCleanup';
 import SafeImage from '../../components/SafeImage';
 import {useTranslation} from 'react-i18next';
+import io from 'socket.io-client';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 700;
@@ -30,6 +31,7 @@ const ChatList = ({navigation}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     initializeChatList();
@@ -38,7 +40,14 @@ const ChatList = ({navigation}) => {
       loadConversations();
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      // Cleanup socket
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
   }, [navigation]);
 
   const initializeChatList = async () => {
@@ -49,34 +58,116 @@ const ChatList = ({navigation}) => {
         return;
       }
       
-     
       const userId = await getCurrentUserId();
       setCurrentUserId(userId);
       
-   
       await migrateChatDataToUserSpecific();
-      
       await loadConversations();
+      
+      // Setup socket connection for real-time updates
+      setupSocketConnection(token);
     } catch (error) {
       console.error('Error initializing chat list:', error);
       setLoading(false);
     }
   };
 
+  const setupSocketConnection = async (token) => {
+    try {
+      if (socketRef.current) return;
+
+      let socketURL = chatApiService.baseURL;
+      socketURL = socketURL.replace(/\/$/, '');
+      socketURL = socketURL.replace('/api', '');
+
+      socketRef.current = io(socketURL, {
+        auth: { token },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5
+      });
+
+      socketRef.current.on('connect', () => {
+        // Socket connected
+      });
+
+      socketRef.current.on('disconnect', () => {
+        // Socket disconnected
+      });
+
+      socketRef.current.on('new-message', (message) => {
+        updateConversationWithNewMessage(message);
+      });
+
+    } catch (error) {
+      console.error('ChatList socket error:', error);
+    }
+  };
+
+  const updateConversationWithNewMessage = (message) => {
+    setChats(prevChats => {
+      const conversationId = message.conversation;
+      const senderId = message.sender?._id?.toString();
+      const recipientId = message.recipient?.toString();
+      
+      // Find the conversation
+      const existingIndex = prevChats.findIndex(chat => 
+        chat.id === conversationId || 
+        chat.otherUser.id === senderId || 
+        chat.otherUser.id === recipientId
+      );
+
+      const updatedConversation = {
+        id: conversationId,
+        otherUser: {
+          id: senderId === currentUserId ? recipientId : senderId,
+          name: message.sender?.firstName || 'User',
+          profileImage: message.sender?.photos?.[0]?.url || null,
+          isOnline: true
+        },
+        lastMessage: {
+          text: message.content || '',
+          content: message.content || '',
+          createdAt: message.createdAt || new Date().toISOString()
+        },
+        unreadCount: senderId !== currentUserId ? 1 : 0,
+        updatedAt: message.createdAt || new Date().toISOString()
+      };
+
+      if (existingIndex >= 0) {
+        // Update existing conversation
+        const newChats = [...prevChats];
+        newChats[existingIndex] = {
+          ...newChats[existingIndex],
+          lastMessage: updatedConversation.lastMessage,
+          updatedAt: updatedConversation.updatedAt,
+          unreadCount: senderId !== currentUserId 
+            ? (newChats[existingIndex].unreadCount || 0) + 1 
+            : 0
+        };
+        
+        // Move to top
+        const [updated] = newChats.splice(existingIndex, 1);
+        return [updated, ...newChats];
+      } else {
+        // Add new conversation at top
+        return [updatedConversation, ...prevChats];
+      }
+    });
+  };
+
   const loadConversations = async () => {
     try {
-      console.log('Loading conversations...');
       setLoading(true);
       
       const token = await getAuthToken();
       if (!token) return;
 
-   
       try {
         const response = await chatApiService.get('/api/chat/conversations');
 
         if (response.success && response.conversations) {
-          console.log('Loaded conversations from backend:', response.conversations);
           setChats(response.conversations);
           return;
         }
@@ -84,16 +175,12 @@ const ChatList = ({navigation}) => {
         console.error('Backend error, falling back to local storage:', backendError);
       }
 
-    
       const userId = currentUserId || await getCurrentUserId() || 'unknown';
       const userSpecificConversationsKey = `all_conversations_${userId}`;
       const savedConversations = await AsyncStorage.getItem(userSpecificConversationsKey);
       
-      console.log('Saved conversations from AsyncStorage:', savedConversations);
-      
       if (savedConversations) {
         const conversations = JSON.parse(savedConversations);
-        console.log('Parsed conversations:', conversations);
         
         const formattedChats = conversations.map(conv => ({
           id: conv.userId,
@@ -108,10 +195,8 @@ const ChatList = ({navigation}) => {
           updatedAt: conv.updatedAt
         }));
         
-        console.log('Formatted chats:', formattedChats);
         setChats(formattedChats);
       } else {
-        console.log('No saved conversations found');
         setChats([]);
       }
     } catch (error) {

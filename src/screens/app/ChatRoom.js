@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,7 @@ import chatApiService from '../../services/chatApiService';
 import SafeImage from '../../components/SafeImage';
 import ChatErrorBoundary from '../../components/ChatErrorBoundary';
 import {useTranslation} from 'react-i18next';
+import io from 'socket.io-client';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 300;
@@ -43,11 +44,12 @@ const ChatRoom = ({navigation, route}) => {
   const [conversationId, setConversationId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     initializeChat();
     
-   
+    // Keyboard listeners
     const keyboardDidShowListener = Keyboard.addListener(
       'keyboardDidShow',
       () => setKeyboardVisible(true)
@@ -57,19 +59,31 @@ const ChatRoom = ({navigation, route}) => {
       () => setKeyboardVisible(false)
     );
 
-
-    const pollingInterval = setInterval(() => {
-      if (conversationId) {
-        loadMessagesFromBackend(true); 
-      }
-    }, 1500);
-
     return () => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
-      clearInterval(pollingInterval);
+      
+      // Cleanup socket connection
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
-  }, [userId, conversationId]);
+  }, [userId]);
+
+  // Setup socket connection when conversationId is available
+  useEffect(() => {
+    if (conversationId && currentUser) {
+      setupSocketConnection();
+    }
+    
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, [conversationId, currentUser]);
 
   const initializeChat = async () => {
     try {
@@ -112,15 +126,99 @@ const ChatRoom = ({navigation, route}) => {
     }
   };
 
-  const loadMessagesFromBackend = async (silentRefresh = false) => {
+  const setupSocketConnection = async () => {
+    try {
+      const token = await getAuthToken();
+      if (!token || socketRef.current) return;
+
+      let socketURL = chatApiService.baseURL;
+      socketURL = socketURL.replace(/\/$/, '');
+      socketURL = socketURL.replace('/api', '');
+
+      socketRef.current = io(socketURL, {
+        auth: { token },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5,
+        timeout: 10000
+      });
+
+      socketRef.current.on('connect', () => {
+        if (conversationId) {
+          socketRef.current.emit('join-conversation', conversationId);
+        }
+      });
+
+      socketRef.current.on('disconnect', (reason) => {
+        // Socket disconnected
+      });
+
+      socketRef.current.on('connect_error', (error) => {
+        console.error('Socket connection error:', error.message);
+      });
+
+      socketRef.current.on('error', (error) => {
+        console.error('Socket error:', error);
+      });
+
+      socketRef.current.on('new-message', (message) => {
+        const formattedMessage = {
+          _id: message._id || Math.round(Math.random() * 1000000),
+          text: message.content || '',
+          createdAt: new Date(message.createdAt || Date.now()),
+          user: {
+            _id: message.sender?._id?.toString() || 'unknown',
+            name: message.sender?.firstName || t('chatroom.unknown_user'),
+            avatar: message.sender?.photos?.[0]?.url || null
+          },
+          image: message.mediaUrl && message.mediaUrl.startsWith('https://res.cloudinary.com/') 
+            ? message.mediaUrl 
+            : null,
+          type: message.type || 'text'
+        };
+
+        setMessages(prevMessages => {
+          const exists = prevMessages.some(m => m._id === formattedMessage._id);
+          if (exists) return prevMessages;
+          
+          const tempMessageIndex = prevMessages.findIndex(m => 
+            m._id.toString().startsWith('temp_') && 
+            m.user._id === formattedMessage.user._id &&
+            m.text === formattedMessage.text
+          );
+          
+          if (tempMessageIndex !== -1) {
+            const newMessages = [...prevMessages];
+            newMessages[tempMessageIndex] = formattedMessage;
+            return newMessages;
+          }
+          
+          return [formattedMessage, ...prevMessages];
+        });
+      });
+
+      socketRef.current.on('message-delivered', (messageId) => {
+        // Message delivered
+      });
+
+      socketRef.current.on('user-typing', (data) => {
+        // User typing indicator
+      });
+
+      socketRef.current.on('messages-read', (data) => {
+        // Messages read receipt
+      });
+
+    } catch (error) {
+      console.error('Error setting up socket:', error);
+    }
+  };
+
+  const loadMessagesFromBackend = async () => {
     try {
       const token = await getAuthToken();
       if (!token || !userId) return;
-
-      
-      if (!silentRefresh) {
-       
-      }
 
       const conversationsResponse = await chatApiService.get('/api/chat/conversations');
 
@@ -132,22 +230,13 @@ const ChatRoom = ({navigation, route}) => {
         if (existingConversation) {
           setConversationId(existingConversation.id);
           
-          // Get messages
           const messagesResponse = await chatApiService.get(`/api/chat/messages/${existingConversation.id}`);
 
           if (messagesResponse && messagesResponse.success && messagesResponse.messages) {
-            // Format messages
             const formattedMessages = messagesResponse.messages.map(msg => {
-              
               let imageUrl = null;
-              if (msg.mediaUrl) {
-                // Only accept Cloudinary URLs
-                if (msg.mediaUrl.startsWith('https://res.cloudinary.com/')) {
-                  imageUrl = msg.mediaUrl;
-                  console.log('Cloudinary image accepted:', msg.mediaUrl);
-                } else {
-                  console.log('Skipping local/non-Cloudinary image:', msg.mediaUrl);
-                }
+              if (msg.mediaUrl && msg.mediaUrl.startsWith('https://res.cloudinary.com/')) {
+                imageUrl = msg.mediaUrl;
               }
               
               return {
@@ -164,17 +253,13 @@ const ChatRoom = ({navigation, route}) => {
               };
             });
             
-            console.log('Formatted messages with Cloudinary images:', formattedMessages.filter(m => m.image).length);
             setMessages(formattedMessages.reverse()); 
           }
         }
       }
     } catch (error) {
       console.error('Error loading messages from backend:', error);
-   
-      if (!silentRefresh) {
-        await loadMessagesFromLocal();
-      }
+      await loadMessagesFromLocal();
     }
   };
 
@@ -245,62 +330,81 @@ const ChatRoom = ({navigation, route}) => {
 
   const onSend = async () => {
     if (inputText.trim() && currentUser) {
+      const tempId = `temp_${Date.now()}_${Math.round(Math.random() * 1000000)}`;
       const newMessage = {
-        _id: Math.round(Math.random() * 1000000),
+        _id: tempId,
         text: inputText.trim(),
         createdAt: new Date(),
         user: currentUser,
+        pending: true,
       };
       
       const updatedMessages = [newMessage, ...messages];
       setMessages(updatedMessages);
+      const messageText = inputText.trim();
       setInputText('');
       
-    
       await saveMessagesToLocal(updatedMessages);
       
-    
-      try {
-        const token = await getAuthToken();
-        if (token) {
-          const messageData = {
-            content: newMessage.text,
-            type: 'text',
-            recipientId: userId,
-            conversationId: conversationId
-          };
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit('send-message', {
+          conversationId: conversationId,
+          content: messageText,
+          type: 'text',
+          recipientId: userId
+        });
+      } else {
+        try {
+          const token = await getAuthToken();
+          if (token) {
+            const messageData = {
+              content: messageText,
+              type: 'text',
+              recipientId: userId,
+              conversationId: conversationId
+            };
 
-          const response = await chatApiService.post('/api/chat/send-message', messageData);
+            const response = await chatApiService.post('/api/chat/send-message', messageData);
 
-          if (response.success) {
-       
-            if (response.message) {
-              const updatedMessageFromBackend = {
-                _id: response.message._id || newMessage._id,
-                text: response.message.content || newMessage.text,
-                createdAt: new Date(response.message.createdAt || newMessage.createdAt),
-                user: {
-                  _id: response.message.sender?._id?.toString() || currentUser._id,
-                  name: response.message.sender?.firstName || currentUser.name,
-                  avatar: response.message.sender?.photos?.[0]?.url || null
-                }
-              };
+            if (response.success) {
+              if (response.message) {
+                setMessages(prevMessages => 
+                  prevMessages.map(msg => 
+                    msg._id === tempId ? {
+                      _id: response.message._id,
+                      text: response.message.content || messageText,
+                      createdAt: new Date(response.message.createdAt),
+                      user: {
+                        _id: response.message.sender?._id?.toString() || currentUser._id,
+                        name: response.message.sender?.firstName || currentUser.name,
+                        avatar: response.message.sender?.photos?.[0]?.url || null
+                      },
+                      pending: false
+                    } : msg
+                  )
+                );
+              }
               
-          
-              setMessages([updatedMessageFromBackend, ...messages]);
+              if (!conversationId && response.message.conversation) {
+                setConversationId(response.message.conversation);
+              }
+            } else {
+              console.error('Failed to send message to backend:', response.message);
+              setMessages(prevMessages => 
+                prevMessages.map(msg => 
+                  msg._id === tempId ? { ...msg, failed: true, pending: false } : msg
+                )
+              );
             }
-            
-        
-            if (!conversationId && response.message.conversation) {
-              setConversationId(response.message.conversation);
-            }
-          } else {
-            console.error('Failed to send message to backend:', response.message);
           }
+        } catch (error) {
+          console.error('Error sending message to backend:', error);
+          setMessages(prevMessages => 
+            prevMessages.map(msg => 
+              msg._id === tempId ? { ...msg, failed: true, pending: false } : msg
+            )
+          );
         }
-      } catch (error) {
-        console.error('Error sending message to backend:', error);
-      
       }
     }
   };
@@ -501,18 +605,7 @@ const ChatRoom = ({navigation, route}) => {
   const renderMessage = ({item}) => {
     if (!currentUser) return null;
     
-    // Convert both IDs to strings for comparison
     const isMyMessage = item.user._id?.toString() === currentUser._id?.toString();
-    
-    // Debug image rendering
-    if (item.image) {
-      console.log('🖼️ Rendering message with image:', {
-        messageId: item._id,
-        imageUrl: item.image,
-        type: item.type,
-        text: item.text
-      });
-    }
     
     return (
       <View style={[

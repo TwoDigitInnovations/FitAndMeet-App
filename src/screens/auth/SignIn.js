@@ -349,6 +349,13 @@ const SignIn = ({navigation}) => {
                 {t('auth.otp.subtitle')}
               </Text>
               <Text style={styles.phoneDisplay}>+{callingCode}-{phoneNumber}</Text>
+              
+              {/* Beta Testing Code Notice */}
+              <View style={styles.betaNotice}>
+                <Text style={styles.betaNoticeText}>
+                  {t('auth.otp.otp_sent_message')}
+                </Text>
+              </View>
 
               <View style={styles.otpContainer}>
                 {otp.map((digit, index) => (
@@ -680,6 +687,20 @@ const styles = StyleSheet.create({
   loadingContainer: {
     marginTop: 20,
     alignItems: 'center',
+  },
+  betaNotice: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#F23576',
+  },
+  betaNoticeText: {
+    fontSize: 14,
+    color: '#E65100',
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 

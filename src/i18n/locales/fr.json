@@ -39,7 +39,7 @@
       "subtitle": "Nous avons envoyé un OTP à votre numéro de mobile",
       "resend_text": "Renvoyer l'OTP dans",
       "otp_sent": "OTP envoyé",
-      "otp_sent_message": "Utilisez 0000 comme OTP pour les tests",
+      "otp_sent_message": "Pour les tests bêta, veuillez entrer le code : 0000",
       "invalid_otp": "OTP invalide",
       "invalid_otp_message": "Veuillez saisir le bon OTP (0000)",
       "profile_incomplete": "Profil incomplet",

@@ -26,7 +26,7 @@ const FirstName = ({navigation}) => {
   const [gender, setGender] = useState('');
   const [interestedIn, setInterestedIn] = useState('');
   const [lookingFor, setLookingFor] = useState('');
-  const [ageRange, setAgeRange] = useState('');
+  const [ageRanges, setAgeRanges] = useState([]); // Changed to array for multiple selection
   const [interests, setInterests] = useState([]);
   const [bio, setBio] = useState('');
   const [photos, setPhotos] = useState([]);
@@ -62,8 +62,8 @@ const FirstName = ({navigation}) => {
     } else if (currentStep === 5 && lookingFor) {
       await updateProfile({lookingFor, currentStep: 6});
       setCurrentStep(6);
-    } else if (currentStep === 6 && ageRange) {
-      await updateProfile({ageRange, currentStep: 7});
+    } else if (currentStep === 6 && ageRanges.length > 0) {
+      await updateProfile({ageRange: ageRanges, currentStep: 7});
       setCurrentStep(7);
     } else if (currentStep === 7 && interests.length > 0) {
       await updateProfile({interests, currentStep: 8});
@@ -376,7 +376,7 @@ const FirstName = ({navigation}) => {
     currentStep === 3 ? !gender : 
     currentStep === 4 ? !interestedIn : 
     currentStep === 5 ? !lookingFor : 
-    currentStep === 6 ? !ageRange : 
+    currentStep === 6 ? ageRanges.length === 0 : 
     currentStep === 7 ? interests.length === 0 : 
     currentStep === 8 ? !bio.trim() : 
     currentStep === 9 ? photos.length === 0 : false;
@@ -560,27 +560,51 @@ const FirstName = ({navigation}) => {
             
             <View style={styles.ageRangeContainer}>
               <TouchableOpacity 
-                style={[styles.ageRangeButton, ageRange === '18-25' && styles.ageRangeButtonSelected]} 
-                onPress={() => setAgeRange('18-25')}>
-                <Text style={[styles.ageRangeText, ageRange === '18-25' && styles.ageRangeTextSelected]}>{t('firstname.age_18_25')}</Text>
+                style={[styles.ageRangeButton, ageRanges.includes('18-25') && styles.ageRangeButtonSelected]} 
+                onPress={() => {
+                  if (ageRanges.includes('18-25')) {
+                    setAgeRanges(ageRanges.filter(r => r !== '18-25'));
+                  } else {
+                    setAgeRanges([...ageRanges, '18-25']);
+                  }
+                }}>
+                <Text style={[styles.ageRangeText, ageRanges.includes('18-25') && styles.ageRangeTextSelected]}>{t('firstname.age_18_25')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[styles.ageRangeButton, ageRange === '25-35' && styles.ageRangeButtonSelected]} 
-                onPress={() => setAgeRange('25-35')}>
-                <Text style={[styles.ageRangeText, ageRange === '25-35' && styles.ageRangeTextSelected]}>{t('firstname.age_25_35')}</Text>
+                style={[styles.ageRangeButton, ageRanges.includes('25-35') && styles.ageRangeButtonSelected]} 
+                onPress={() => {
+                  if (ageRanges.includes('25-35')) {
+                    setAgeRanges(ageRanges.filter(r => r !== '25-35'));
+                  } else {
+                    setAgeRanges([...ageRanges, '25-35']);
+                  }
+                }}>
+                <Text style={[styles.ageRangeText, ageRanges.includes('25-35') && styles.ageRangeTextSelected]}>{t('firstname.age_25_35')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[styles.ageRangeButton, ageRange === '35-45' && styles.ageRangeButtonSelected]} 
-                onPress={() => setAgeRange('35-45')}>
-                <Text style={[styles.ageRangeText, ageRange === '35-45' && styles.ageRangeTextSelected]}>{t('firstname.age_35_45')}</Text>
+                style={[styles.ageRangeButton, ageRanges.includes('35-45') && styles.ageRangeButtonSelected]} 
+                onPress={() => {
+                  if (ageRanges.includes('35-45')) {
+                    setAgeRanges(ageRanges.filter(r => r !== '35-45'));
+                  } else {
+                    setAgeRanges([...ageRanges, '35-45']);
+                  }
+                }}>
+                <Text style={[styles.ageRangeText, ageRanges.includes('35-45') && styles.ageRangeTextSelected]}>{t('firstname.age_35_45')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[styles.ageRangeButton, ageRange === '45-Over' && styles.ageRangeButtonSelected]} 
-                onPress={() => setAgeRange('45-Over')}>
-                <Text style={[styles.ageRangeText, ageRange === '45-Over' && styles.ageRangeTextSelected]}>{t('firstname.age_45_over')}</Text>
+                style={[styles.ageRangeButton, ageRanges.includes('45-Over') && styles.ageRangeButtonSelected]} 
+                onPress={() => {
+                  if (ageRanges.includes('45-Over')) {
+                    setAgeRanges(ageRanges.filter(r => r !== '45-Over'));
+                  } else {
+                    setAgeRanges([...ageRanges, '45-Over']);
+                  }
+                }}>
+                <Text style={[styles.ageRangeText, ageRanges.includes('45-Over') && styles.ageRangeTextSelected]}>{t('firstname.age_45_over')}</Text>
               </TouchableOpacity>
             </View>
             
@@ -696,6 +720,7 @@ const FirstName = ({navigation}) => {
               title={t('firstname.select_birthday')}
               confirmText={t('firstname.confirm')}
               cancelText={t('firstname.cancel')}
+              locale="en-GB"
             />
           </View>
         ) : (

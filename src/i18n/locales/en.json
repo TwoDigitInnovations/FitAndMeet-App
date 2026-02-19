@@ -39,7 +39,7 @@
       "subtitle": "We have sent an OTP to your mobile number",
       "resend_text": "Resend OTP in",
       "otp_sent": "OTP Sent",
-      "otp_sent_message": "Use 0000 as OTP for testing",
+      "otp_sent_message": "For beta testing, please enter the code: 0000",
       "invalid_otp": "Invalid OTP",
       "invalid_otp_message": "Please enter correct OTP (0000)",
       "profile_incomplete": "Profile Incomplete",

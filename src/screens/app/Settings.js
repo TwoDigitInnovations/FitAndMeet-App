@@ -158,12 +158,12 @@ const Settings = ({navigation}) => {
               style={styles.helpIcon}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerIcon}>
+          {/* <TouchableOpacity style={styles.headerIcon}>
             <Image 
               source={require('../../Assets/images/setting.png')} 
               style={styles.settingIcon}
             />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
 
