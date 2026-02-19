@@ -19,6 +19,7 @@ import { AuthContext } from '../../../App';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../../components/LanguageSelector';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { sendTestNotification } from '../../services/oneSignalService';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 300;
@@ -30,6 +31,8 @@ const Settings = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [testingNotification, setTestingNotification] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const insets = useSafeAreaInsets();
 
 
@@ -60,6 +63,26 @@ const Settings = ({ navigation }) => {
 
   const handleLogout = () => {
     setShowLogoutModal(true);
+  };
+
+  const handleTestNotification = async () => {
+    setTestingNotification(true);
+    try {
+      const result = await sendTestNotification();
+      if (result.success) {
+        Alert.alert('✅ Success', 'Test notification sent! Check your notification tray.');
+      } else {
+        Alert.alert('❌ Error', result.message || 'Failed to send test notification');
+      }
+    } catch (error) {
+      Alert.alert('❌ Error', 'Failed to send test notification');
+    } finally {
+      setTestingNotification(false);
+    }
+  };
+
+  const showPremiumFeatureModal = () => {
+    setShowPremiumModal(true);
   };
 
   const confirmLogout = async () => {
@@ -162,12 +185,7 @@ const Settings = ({ navigation }) => {
               style={styles.helpIcon}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerIcon}>
-            <Image
-              source={require('../../Assets/images/setting.png')}
-              style={styles.settingIcon}
-            />
-          </TouchableOpacity> 
+        
         </View>
       </View>
 
@@ -177,7 +195,7 @@ const Settings = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         bounces={true}
         scrollEnabled={true}>
-        {/* Profile Section */}
+       
         <View style={styles.profileSection}>
           <View style={styles.profileImageContainer}>
             <Image
@@ -231,7 +249,7 @@ const Settings = ({ navigation }) => {
               </View>
               <Text style={styles.cardTitle}>Fit & Meet</Text>
             </View>
-            <TouchableOpacity style={styles.upgradeButton}>
+            <TouchableOpacity style={styles.upgradeButton} onPress={showPremiumFeatureModal}>
               <Text style={styles.upgradeButtonText}>
                 {profileData?.subscription?.type === 'Free' ? t('settings.upgrade') : t('settings.premium')}
               </Text>
@@ -267,14 +285,14 @@ const Settings = ({ navigation }) => {
           ))}
 
           <View style={styles.seeAllFeaturesContainer}>
-            <TouchableOpacity style={styles.seeAllFeatures}>
+            <TouchableOpacity style={styles.seeAllFeatures} onPress={showPremiumFeatureModal}>
               <Text style={styles.featureText}>{t('settings.see_all_features')}</Text>
               <Image
                 source={require('../../Assets/images/right.png')}
                 style={styles.rightIcon}
               />
-            </TouchableOpacity >
-          </View >
+            </TouchableOpacity>
+          </View>
         </View >
 
         {/* Super Likes Card */}
@@ -292,7 +310,7 @@ const Settings = ({ navigation }) => {
                 <Text style={styles.smallCardSubtitle}>{t('settings.get_more')}</Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.plusButton}>
+            <TouchableOpacity style={styles.plusButton} onPress={showPremiumFeatureModal}>
               <Image
                 source={require('../../Assets/images/plus.png')}
                 style={styles.plusIcon}
@@ -301,7 +319,6 @@ const Settings = ({ navigation }) => {
           </View>
         </View >
 
-        {/* Free For Now Card */}
         < View style={styles.smallCard} >
           <View style={styles.smallCardContent}>
             <View style={styles.smallCardLeft}>
@@ -315,7 +332,7 @@ const Settings = ({ navigation }) => {
                 </Text>
               </View>
             </View>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={showPremiumFeatureModal}>
               <Image
                 source={require('../../Assets/images/rightarrow.png')}
                 style={styles.rightArrowIcon}
@@ -339,7 +356,7 @@ const Settings = ({ navigation }) => {
                 <Text style={styles.smallCardSubtitle}>{t('settings.get_more')}</Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.plusButton}>
+            <TouchableOpacity style={styles.plusButton} onPress={showPremiumFeatureModal}>
               <Image
                 source={require('../../Assets/images/plus.png')}
                 style={styles.plusIcon}
@@ -348,7 +365,22 @@ const Settings = ({ navigation }) => {
           </View>
         </View >
 
-        {/* Language Selector */}
+        {/* <TouchableOpacity 
+          style={styles.testNotificationButton}
+          onPress={handleTestNotification}
+          disabled={testingNotification}
+        >
+          {testingNotification ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <Text style={styles.testNotificationText}>🔔 Test Push Notification</Text>
+              <Text style={styles.testNotificationSubtext}>Tap to test if notifications are working</Text>
+            </>
+          )}
+        </TouchableOpacity> */}
+
+      
         < View style={styles.languageCard} >
           <View style={styles.smallCardContent}>
             <View style={styles.smallCardLeft}>
@@ -381,7 +413,6 @@ const Settings = ({ navigation }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              {/* Exit Icon */}
               <View style={styles.modalIconContainer}>
                 <Image
                   source={require('../../Assets/images/exit.png')}
@@ -389,15 +420,12 @@ const Settings = ({ navigation }) => {
                 />
               </View>
 
-              {/* Title */}
               <Text style={styles.modalTitle}>{t('settings.logout')}</Text>
 
-              {/* Message */}
               <Text style={styles.modalMessage}>
                 {t('settings.logout_confirmation')}
               </Text>
 
-              {/* Buttons */}
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={styles.cancelButton}
@@ -415,6 +443,36 @@ const Settings = ({ navigation }) => {
                   ) : (
                     <Text style={styles.logoutButtonText}>{t('settings.logout')}</Text>
                   )}
+                </TouchableOpacity>
+              </View>
+            </View >
+          </View >
+        </View >
+      </Modal >
+
+      < Modal
+        visible={showPremiumModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPremiumModal(false)} >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalIconContainer}>
+                <Text style={styles.premiumIcon}>👑</Text>
+              </View>
+
+              <Text style={styles.modalTitle}>{t('settings.premium_feature')}</Text>
+
+              <Text style={styles.modalMessage}>
+                {t('settings.premium_message')}
+              </Text>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.premiumOkButton}
+                  onPress={() => setShowPremiumModal(false)}>
+                  <Text style={styles.logoutButtonText}>{t('settings.ok')}</Text>
                 </TouchableOpacity>
               </View>
             </View >
@@ -820,6 +878,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: '100%',
     gap: 15,
+    justifyContent: 'center',
   },
   cancelButton: {
     flex: 1,
@@ -851,6 +910,38 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  testNotificationButton: {
+    backgroundColor: '#FF3B6D',
+    marginHorizontal: 20,
+    marginVertical: 15,
+    padding: 20,
+    borderRadius: 15,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF30',
+  },
+  testNotificationText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  testNotificationSubtext: {
+    color: '#FFFFFF90',
+    fontSize: 14,
+  },
+  premiumIcon: {
+    fontSize: 50,
+  },
+  premiumOkButton: {
+    backgroundColor: '#F2357661',
+    paddingVertical: 10,
+    paddingHorizontal: 40,
+    borderRadius: 25,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'white',
   },
 });
 

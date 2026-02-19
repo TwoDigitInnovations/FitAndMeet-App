@@ -25,6 +25,7 @@ import PhoneInput, {
   ICountry,
   isValidPhoneNumber,
 } from 'react-native-international-phone-number';
+import { updatePlayerIdOnBackend } from '../../services/oneSignalService';
 
 const SignIn = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -218,6 +219,7 @@ const SignIn = ({ navigation }) => {
         const savedToken = await getAuthToken();
         console.log('Token saved successfully:', savedToken ? 'Yes' : 'No');
 
+        await updatePlayerIdOnBackend();
 
         if (response.user.profileCompleted) {
           // Profile is complete, set authentication state

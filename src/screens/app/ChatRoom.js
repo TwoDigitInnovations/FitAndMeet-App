@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import React, {useState, useEffect, useRef} from 'react';
-=======
-import React, { useState, useEffect } from 'react';
->>>>>>> origin/latest-app
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -22,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 import { Camera, ThumbsUp, Send } from 'lucide-react-native';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
+import io from 'socket.io-client';
 import { getAuthToken } from '../../utils/storage';
 import { getCurrentUserInfo, getCurrentUserId } from '../../utils/tokenUtils';
 import chatApiService from '../../services/chatApiService';
@@ -48,6 +45,7 @@ const ChatRoom = ({ navigation, route }) => {
   const [conversationId, setConversationId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const socketRef = useRef(null);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -74,7 +72,7 @@ const ChatRoom = ({ navigation, route }) => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
       
-      // Cleanup socket connection
+     
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -82,7 +80,7 @@ const ChatRoom = ({ navigation, route }) => {
     };
   }, [userId]);
 
-  // Setup socket connection when conversationId is available
+
   useEffect(() => {
     if (conversationId && currentUser) {
       setupSocketConnection();
@@ -162,7 +160,7 @@ const ChatRoom = ({ navigation, route }) => {
       });
 
       socketRef.current.on('disconnect', (reason) => {
-        // Socket disconnected
+       
       });
 
       socketRef.current.on('connect_error', (error) => {
@@ -210,15 +208,15 @@ const ChatRoom = ({ navigation, route }) => {
       });
 
       socketRef.current.on('message-delivered', (messageId) => {
-        // Message delivered
+        
       });
 
       socketRef.current.on('user-typing', (data) => {
-        // User typing indicator
+       
       });
 
       socketRef.current.on('messages-read', (data) => {
-        // Messages read receipt
+        
       });
 
     } catch (error) {
@@ -226,14 +224,13 @@ const ChatRoom = ({ navigation, route }) => {
     }
   };
 
-  const loadMessagesFromBackend = async () => {
+  const loadMessagesFromBackend = async (silentRefresh = false) => {
     try {
       const token = await getAuthToken();
       if (!token || !userId) return;
 
-
       if (!silentRefresh) {
-
+       
       }
 
       const conversationsResponse = await chatApiService.get('/api/chat/conversations');
@@ -246,7 +243,7 @@ const ChatRoom = ({ navigation, route }) => {
         if (existingConversation) {
           setConversationId(existingConversation.id);
 
-          // Get messages
+         
           const messagesResponse = await chatApiService.get(`/api/chat/messages/${existingConversation.id}`);
           console.log(messagesResponse)
           if (messagesResponse && messagesResponse.success && messagesResponse.messages) {
@@ -406,17 +403,14 @@ const ChatRoom = ({ navigation, route }) => {
           } else {
             console.error('Failed to send message to backend:', response.message);
           }
-        } catch (error) {
-          console.error('Error sending message to backend:', error);
-          setMessages(prevMessages => 
-            prevMessages.map(msg => 
-              msg._id === tempId ? { ...msg, failed: true, pending: false } : msg
-            )
-          );
         }
       } catch (error) {
         console.error('Error sending message to backend:', error);
-
+        setMessages(prevMessages => 
+          prevMessages.map(msg => 
+            msg._id === tempId ? { ...msg, failed: true, pending: false } : msg
+          )
+        );
       }
     }
   };
@@ -474,7 +468,7 @@ const ChatRoom = ({ navigation, route }) => {
     setMessages(updatedMessages);
     await saveMessagesToLocal(updatedMessages);
 
-    // Send to backend
+ 
     try {
       const token = await getAuthToken();
       if (token) {
@@ -549,7 +543,7 @@ const ChatRoom = ({ navigation, route }) => {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
-              // Don't set Content-Type for FormData, let fetch handle it
+             
             },
             body: uploadFormData,
           });
@@ -592,7 +586,7 @@ const ChatRoom = ({ navigation, route }) => {
     setMessages(updatedMessages);
     await saveMessagesToLocal(updatedMessages);
 
-    // Send to backend
+    
     try {
       const token = await getAuthToken();
       if (token) {
@@ -616,11 +610,7 @@ const ChatRoom = ({ navigation, route }) => {
 
   const renderMessage = ({ item }) => {
     if (!currentUser) return null;
-
-    // Convert both IDs to strings for comparison
     const isMyMessage = item.user._id?.toString() === currentUser._id?.toString();
-
-    // Debug image rendering
     if (item.image) {
       console.log('🖼️ Rendering message with image:', {
         messageId: item._id,

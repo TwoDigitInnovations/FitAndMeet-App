@@ -16,6 +16,7 @@ import { reset } from './src/utils/navigationRef';
 import apiService from './src/services/apiService';
 import './src/i18n';
 import { LanguageProvider } from './src/contexts/LanguageContext';
+import { initializeOneSignal } from './src/services/oneSignalService';
 
 export const LoadContext = createContext('');
 export const UserContext = createContext('');
@@ -44,9 +45,9 @@ function App() {
   };
 
   useEffect(() => {
+    initializeOneSignal();
 
     const initializeApp = async () => {
-
       const minSplashTime = new Promise(resolve => setTimeout(resolve, 1500));
       const authCheck = checkLogin();
       await Promise.all([minSplashTime, authCheck]);

@@ -260,7 +260,11 @@
     "viewed_profile": "Ont vu mon profil",
     "logout_confirmation": "Êtes-vous sûr de vouloir vous déconnecter de votre compte ?",
     "top_picks": "Meilleurs choix",
-    "see_whos_like_you": "Voir qui vous aime"
+    "see_whos_like_you": "Voir qui vous aime",
+    "premium_feature": "Fonctionnalité Premium",
+    "premium_message": "Cette fonctionnalité est disponible pour les utilisateurs premium. Les fonctionnalités premium seront disponibles dans la prochaine mise à jour de l'application.",
+    "coming_soon": "Bientôt disponible",
+    "ok": "OK"
   },
   "discover": {
     "title": "Découvrir",

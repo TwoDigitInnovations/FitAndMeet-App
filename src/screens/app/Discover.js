@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Image,
   StatusBar,
@@ -11,6 +10,7 @@ import {
   Dimensions,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
@@ -31,18 +31,20 @@ const buttonFontSize = isNarrowScreen ? 13 : 14;
 const Discover = ({ navigation }) => {
   const { t, i18n } = useTranslation();
   const [selectedFilter, setSelectedFilter] = useState('Near by');
-  const [likedProfiles, setLikedProfiles] = useState([]);
+  const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
 
   const filterOptions = [t('discover.near_by'), t('discover.online_now'), t('discover.new_profile')];
   const insets = useSafeAreaInsets();
 
-
   useEffect(() => {
-    fetchLikedProfiles();
     getCurrentUser();
   }, []);
+
+  useEffect(() => {
+    fetchProfiles();
+  }, [selectedFilter]);
 
   const getCurrentUser = async () => {
     try {
@@ -55,22 +57,33 @@ const Discover = ({ navigation }) => {
     }
   };
 
-  const fetchLikedProfiles = async () => {
+  const fetchProfiles = async () => {
     try {
       setLoading(true);
-      const response = await apiService.GetApi('api/match/liked-profiles');
+      
+      let filterParam = '';
+      if (selectedFilter === t('discover.online_now')) {
+        filterParam = 'online';
+      } else if (selectedFilter === t('discover.new_profile')) {
+        filterParam = 'new';
+      }
+
+      const endpoint = filterParam 
+        ? `api/match/filtered-profiles?filter=${filterParam}`
+        : 'api/match/liked-profiles';
+
+      const response = await apiService.GetApi(endpoint);
 
       if (response.success) {
-        setLikedProfiles(response.likedProfiles || []);
+        const data = response.profiles || response.likedProfiles || [];
+        setProfiles(data);
       } else {
-        console.error('API Error:', response.message);
         Alert.alert(t('auth.otp.error'), response.message || t('discover.failed_load_profiles'));
-        setLikedProfiles([]);
+        setProfiles([]);
       }
     } catch (error) {
-      console.error('Network Error:', error);
       Alert.alert(t('auth.otp.error'), t('discover.failed_load_profiles'));
-      setLikedProfiles([]);
+      setProfiles([]);
     } finally {
       setLoading(false);
     }
@@ -98,13 +111,13 @@ const Discover = ({ navigation }) => {
           style={styles.profileImage}
         />
 
-        {/* Gradient overlay */}
+      
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.8)']}
           style={styles.profileOverlay}
         />
 
-        {/* Profile info */}
+      
         <View style={styles.profileInfo}>
           <View style={styles.nameContainer}>
             <Text style={styles.profileName}>{firstName} {item.age}</Text>
@@ -138,7 +151,7 @@ const Discover = ({ navigation }) => {
       {/* <View style={[styles.topProfileSection, { paddingTop: Platform.OS === 'android' && insets.top + 10 }]}></View> */}
       <StatusBar barStyle="light-content" backgroundColor="#571D38" />
 
-      {/* Header */}
+     
       <View style={[styles.header, { paddingTop: Platform.OS === 'android' && insets.top + 10 }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
@@ -206,20 +219,20 @@ const Discover = ({ navigation }) => {
           <ActivityIndicator size="large" color="white" />
           <Text style={styles.loadingText}>{t('discover.loading_profiles')}</Text>
         </View>
-      ) : likedProfiles.length === 0 ? (
+      ) : profiles.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>{t('discover.no_liked_profiles')}</Text>
           <Text style={styles.emptySubText}>{t('discover.start_liking_profiles')}</Text>
           <TouchableOpacity
             style={styles.refreshButton}
-            onPress={fetchLikedProfiles}
+            onPress={fetchProfiles}
           >
             <Text style={styles.refreshButtonText}>{t('home.refresh')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <FlatList
-          data={likedProfiles}
+          data={profiles}
           renderItem={renderProfileCard}
           keyExtractor={(item) => item.id.toString()}
           numColumns={2}

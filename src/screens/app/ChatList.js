@@ -13,6 +13,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 import { Search, Mic } from 'lucide-react-native';
+import io from 'socket.io-client';
 import chatApiService from '../../services/chatApiService';
 import { getAuthToken } from '../../utils/storage';
 import { getCurrentUserId } from '../../utils/tokenUtils';
@@ -30,6 +31,7 @@ const ChatList = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const socketRef = useRef(null);
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 
@@ -42,7 +44,7 @@ const ChatList = ({ navigation }) => {
 
     return () => {
       unsubscribe();
-      // Cleanup socket
+     
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -58,16 +60,14 @@ const ChatList = ({ navigation }) => {
         return;
       }
 
-
       const userId = await getCurrentUserId();
       setCurrentUserId(userId);
-
 
       await migrateChatDataToUserSpecific();
 
       await loadConversations();
       
-      // Setup socket connection for real-time updates
+     
       setupSocketConnection(token);
     } catch (error) {
       console.error('Error initializing chat list:', error);
@@ -92,11 +92,11 @@ const ChatList = ({ navigation }) => {
       });
 
       socketRef.current.on('connect', () => {
-        // Socket connected
+        console.log('ChatList socket connected');
       });
 
       socketRef.current.on('disconnect', () => {
-        // Socket disconnected
+        console.log('ChatList socket disconnected');
       });
 
       socketRef.current.on('new-message', (message) => {
@@ -139,7 +139,7 @@ const ChatList = ({ navigation }) => {
       };
 
       if (existingIndex >= 0) {
-        // Update existing conversation
+       
         const newChats = [...prevChats];
         newChats[existingIndex] = {
           ...newChats[existingIndex],
@@ -150,11 +150,11 @@ const ChatList = ({ navigation }) => {
             : 0
         };
         
-        // Move to top
+       
         const [updated] = newChats.splice(existingIndex, 1);
         return [updated, ...newChats];
       } else {
-        // Add new conversation at top
+       
         return [updatedConversation, ...prevChats];
       }
     });

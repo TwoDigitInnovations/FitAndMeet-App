@@ -260,7 +260,11 @@
     "viewed_profile": "Viewed my Profile",
     "logout_confirmation": "Are you sure you want to logout from your account?",
     "top_picks": "Top picks",
-    "see_whos_like_you": "See whos like you"
+    "see_whos_like_you": "See whos like you",
+    "premium_feature": "Premium Feature",
+    "premium_message": "This feature is available for premium users. Premium features will be available in the next app update.",
+    "coming_soon": "Coming Soon",
+    "ok": "OK"
   },
   "discover": {
     "title": "Discover",
