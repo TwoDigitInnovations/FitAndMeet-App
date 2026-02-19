@@ -7,17 +7,16 @@ import {
   TouchableOpacity,
   StatusBar,
   Dimensions,
+  Platform,
 } from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
-import {useTranslation} from 'react-i18next';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../components/LanguageSelector';
 
-const { height } = Dimensions.get('window');
-const isSmallScreen = height < 200;
-const languageTopPosition = isSmallScreen ? 35 : 50;
 
-const WelcomeScreen = ({navigation}) => {
-  const {t} = useTranslation();
+const WelcomeScreen = ({ navigation }) => {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const handleSignUp = () => {
     navigation.navigate('SignUp');
@@ -29,14 +28,14 @@ const WelcomeScreen = ({navigation}) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar 
-        backgroundColor="#010918" 
+      <StatusBar
+        backgroundColor="#010918"
         barStyle="light-content"
-        translucent={false}
+
       />
 
       {/* Language Selector */}
-      <View style={styles.languageContainer}>
+      <View style={[styles.languageContainer, { top: Platform.OS === 'android' ? insets.top + 10 : 10 }]}>
         <LanguageSelector />
       </View>
 
@@ -77,7 +76,7 @@ const WelcomeScreen = ({navigation}) => {
 
       <Text style={styles.termsText}>
         {t('welcome.terms_text')}{' '}
-        <Text 
+        <Text
           style={styles.termsLink}
           onPress={() => navigation.navigate('TermsAndConditions')}
         >
@@ -95,7 +94,7 @@ const styles = StyleSheet.create({
   },
   languageContainer: {
     position: 'absolute',
-    top: languageTopPosition,
+    // top: languageTopPosition,
     left: 20,
     zIndex: 10,
   },

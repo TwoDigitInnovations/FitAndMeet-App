@@ -1,7 +1,7 @@
-    const devUrl = 'https://api.fitandmeet.com/';
+const devUrl = 'https://api.fitandmeet.com/';
 
-  //  const devUrl = 'http://10.0.2.2:5000/';  // Android Emulator (Backend runs on port 5000)
-    // const devUrl = 'http://192.168.1.8:5000/';  // Real Device
+//  const devUrl = 'http://10.0.2.2:5000/';  // Android Emulator (Backend runs on port 5000)
+//  const devUrl = 'http://192.168.1.14:5000/';  // Real Device
 
 let apiUrl = devUrl;
 export const Googlekey = 'AIzaSyBSJ4feXtXRl7L4BxOrMubz8fciujaMBTk';
@@ -9,6 +9,7 @@ export const Currency = '$';
 
 const Constants = {
   baseUrl: apiUrl,
+  mainTheme: '#5D1F3A',
   black: '#000000',
   customblack: '#1E1E1E',
   white: '#FFFFFF',

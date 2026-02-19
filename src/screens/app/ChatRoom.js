@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, {useState, useEffect, useRef} from 'react';
+=======
+import React, { useState, useEffect } from 'react';
+>>>>>>> origin/latest-app
 import {
   View,
   Text,
@@ -16,40 +20,40 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
-import {Camera, ThumbsUp, Send} from 'lucide-react-native';
-import {launchImageLibrary, launchCamera} from 'react-native-image-picker';
-import {getAuthToken} from '../../utils/storage';
-import {getCurrentUserInfo, getCurrentUserId} from '../../utils/tokenUtils';
+import { Camera, ThumbsUp, Send } from 'lucide-react-native';
+import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
+import { getAuthToken } from '../../utils/storage';
+import { getCurrentUserInfo, getCurrentUserId } from '../../utils/tokenUtils';
 import chatApiService from '../../services/chatApiService';
 import SafeImage from '../../components/SafeImage';
 import ChatErrorBoundary from '../../components/ChatErrorBoundary';
-import {useTranslation} from 'react-i18next';
-import io from 'socket.io-client';
+import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 300;
 const topPadding = isSmallScreen ? 35 : 50;
 
-const ChatRoom = ({navigation, route}) => {
-  const {t} = useTranslation();
-  const {userId, userName, userImage} = route.params || {};
-  
+const ChatRoom = ({ navigation, route }) => {
+  const { t } = useTranslation();
+  const { userId, userName, userImage } = route.params || {};
+
   if (!userId) {
     console.error('ERROR: userId is missing from route params!');
   }
-  
+
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [conversationId, setConversationId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const socketRef = useRef(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     initializeChat();
-    
-    // Keyboard listeners
+
+
     const keyboardDidShowListener = Keyboard.addListener(
       'keyboardDidShow',
       () => setKeyboardVisible(true)
@@ -58,6 +62,13 @@ const ChatRoom = ({navigation, route}) => {
       'keyboardDidHide',
       () => setKeyboardVisible(false)
     );
+
+
+    const pollingInterval = setInterval(() => {
+      if (conversationId) {
+        loadMessagesFromBackend(true);
+      }
+    }, 1500);
 
     return () => {
       keyboardDidShowListener.remove();
@@ -95,10 +106,10 @@ const ChatRoom = ({navigation, route}) => {
         return;
       }
 
-     
+
       let userInfo = await getCurrentUserInfo();
-      
-   
+
+
       if (!userInfo.avatar) {
         try {
           const profileResponse = await chatApiService.get(`/api/profile/user/${userInfo._id}`);
@@ -110,13 +121,13 @@ const ChatRoom = ({navigation, route}) => {
             };
           }
         } catch (error) {
-      
+
         }
       }
-      
+
       setCurrentUser(userInfo);
-      
-    
+
+
       await loadMessagesFromBackend();
     } catch (error) {
       console.error('Error initializing chat:', error);
@@ -220,8 +231,13 @@ const ChatRoom = ({navigation, route}) => {
       const token = await getAuthToken();
       if (!token || !userId) return;
 
-      const conversationsResponse = await chatApiService.get('/api/chat/conversations');
 
+      if (!silentRefresh) {
+
+      }
+
+      const conversationsResponse = await chatApiService.get('/api/chat/conversations');
+      console.log(conversationsResponse)
       if (conversationsResponse && conversationsResponse.success) {
         const existingConversation = conversationsResponse.conversations.find(
           conv => conv.otherUser && conv.otherUser.id === userId
@@ -229,16 +245,17 @@ const ChatRoom = ({navigation, route}) => {
 
         if (existingConversation) {
           setConversationId(existingConversation.id);
-          
-          const messagesResponse = await chatApiService.get(`/api/chat/messages/${existingConversation.id}`);
 
+          // Get messages
+          const messagesResponse = await chatApiService.get(`/api/chat/messages/${existingConversation.id}`);
+          console.log(messagesResponse)
           if (messagesResponse && messagesResponse.success && messagesResponse.messages) {
             const formattedMessages = messagesResponse.messages.map(msg => {
               let imageUrl = null;
               if (msg.mediaUrl && msg.mediaUrl.startsWith('https://res.cloudinary.com/')) {
                 imageUrl = msg.mediaUrl;
               }
-              
+
               return {
                 _id: msg._id || Math.round(Math.random() * 1000000),
                 text: msg.content || '',
@@ -248,18 +265,22 @@ const ChatRoom = ({navigation, route}) => {
                   name: msg.sender?.firstName || t('chatroom.unknown_user'),
                   avatar: msg.sender?.photos?.[0]?.url || null
                 },
-                image: imageUrl, 
+                image: imageUrl,
                 type: msg.type || 'text'
               };
             });
-            
-            setMessages(formattedMessages.reverse()); 
+
+            console.log('Formatted messages with Cloudinary images:', formattedMessages.filter(m => m.image).length);
+            setMessages(formattedMessages.reverse());
           }
         }
       }
     } catch (error) {
       console.error('Error loading messages from backend:', error);
-      await loadMessagesFromLocal();
+
+      if (!silentRefresh) {
+        await loadMessagesFromLocal();
+      }
     }
   };
 
@@ -267,11 +288,11 @@ const ChatRoom = ({navigation, route}) => {
     try {
       const currentUserId = await getCurrentUserId();
       if (!currentUserId) return;
-      
-     
+
+
       const userSpecificKey = `conversation_${currentUserId}_${userId}`;
       const savedMessages = await AsyncStorage.getItem(userSpecificKey);
-      
+
       if (savedMessages) {
         setMessages(JSON.parse(savedMessages));
       }
@@ -284,12 +305,12 @@ const ChatRoom = ({navigation, route}) => {
     try {
       const currentUserId = await getCurrentUserId();
       if (!currentUserId) return;
-      
-  
+
+
       const userSpecificKey = `conversation_${currentUserId}_${userId}`;
       await AsyncStorage.setItem(userSpecificKey, JSON.stringify(newMessages));
-      
-    
+
+
       await saveConversationInfo(newMessages[0], currentUserId);
     } catch (error) {
       console.error('Error saving messages locally:', error);
@@ -301,7 +322,7 @@ const ChatRoom = ({navigation, route}) => {
       const userSpecificConversationsKey = `all_conversations_${currentUserId}`;
       const savedConversations = await AsyncStorage.getItem(userSpecificConversationsKey);
       let conversations = savedConversations ? JSON.parse(savedConversations) : [];
-      
+
       const existingIndex = conversations.findIndex(conv => conv.userId === userId);
       const conversationInfo = {
         userId,
@@ -314,13 +335,13 @@ const ChatRoom = ({navigation, route}) => {
         },
         updatedAt: new Date().toISOString()
       };
-      
+
       if (existingIndex >= 0) {
         conversations[existingIndex] = conversationInfo;
       } else {
         conversations.push(conversationInfo);
       }
-      
+
       conversations.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
       await AsyncStorage.setItem(userSpecificConversationsKey, JSON.stringify(conversations));
     } catch (error) {
@@ -338,64 +359,52 @@ const ChatRoom = ({navigation, route}) => {
         user: currentUser,
         pending: true,
       };
-      
+
       const updatedMessages = [newMessage, ...messages];
       setMessages(updatedMessages);
       const messageText = inputText.trim();
       setInputText('');
-      
+
+
       await saveMessagesToLocal(updatedMessages);
-      
-      if (socketRef.current && socketRef.current.connected) {
-        socketRef.current.emit('send-message', {
-          conversationId: conversationId,
-          content: messageText,
-          type: 'text',
-          recipientId: userId
-        });
-      } else {
-        try {
-          const token = await getAuthToken();
-          if (token) {
-            const messageData = {
-              content: messageText,
-              type: 'text',
-              recipientId: userId,
-              conversationId: conversationId
-            };
+
+
+      try {
+        const token = await getAuthToken();
+        if (token) {
+          const messageData = {
+            content: newMessage.text,
+            type: 'text',
+            recipientId: userId,
+            conversationId: conversationId
+          };
 
             const response = await chatApiService.post('/api/chat/send-message', messageData);
 
-            if (response.success) {
-              if (response.message) {
-                setMessages(prevMessages => 
-                  prevMessages.map(msg => 
-                    msg._id === tempId ? {
-                      _id: response.message._id,
-                      text: response.message.content || messageText,
-                      createdAt: new Date(response.message.createdAt),
-                      user: {
-                        _id: response.message.sender?._id?.toString() || currentUser._id,
-                        name: response.message.sender?.firstName || currentUser.name,
-                        avatar: response.message.sender?.photos?.[0]?.url || null
-                      },
-                      pending: false
-                    } : msg
-                  )
-                );
-              }
-              
-              if (!conversationId && response.message.conversation) {
-                setConversationId(response.message.conversation);
-              }
-            } else {
-              console.error('Failed to send message to backend:', response.message);
-              setMessages(prevMessages => 
-                prevMessages.map(msg => 
-                  msg._id === tempId ? { ...msg, failed: true, pending: false } : msg
-                )
-              );
+          if (response.success) {
+
+            if (response.message) {
+              const updatedMessageFromBackend = {
+                _id: response.message._id || newMessage._id,
+                text: response.message.content || newMessage.text,
+                createdAt: new Date(response.message.createdAt || newMessage.createdAt),
+                user: {
+                  _id: response.message.sender?._id?.toString() || currentUser._id,
+                  name: response.message.sender?.firstName || currentUser.name,
+                  avatar: response.message.sender?.photos?.[0]?.url || null
+                }
+              };
+
+
+              setMessages([updatedMessageFromBackend, ...messages]);
             }
+
+
+            if (!conversationId && response.message.conversation) {
+              setConversationId(response.message.conversation);
+            }
+          } else {
+            console.error('Failed to send message to backend:', response.message);
           }
         } catch (error) {
           console.error('Error sending message to backend:', error);
@@ -405,6 +414,9 @@ const ChatRoom = ({navigation, route}) => {
             )
           );
         }
+      } catch (error) {
+        console.error('Error sending message to backend:', error);
+
       }
     }
   };
@@ -414,9 +426,9 @@ const ChatRoom = ({navigation, route}) => {
       t('chatroom.select_image'),
       t('chatroom.choose_option'),
       [
-        {text: t('chatroom.camera'), onPress: openCamera},
-        {text: t('chatroom.gallery'), onPress: openGallery},
-        {text: t('firstname.cancel'), style: 'cancel'},
+        { text: t('chatroom.camera'), onPress: openCamera },
+        { text: t('chatroom.gallery'), onPress: openGallery },
+        { text: t('firstname.cancel'), style: 'cancel' },
       ]
     );
   };
@@ -449,7 +461,7 @@ const ChatRoom = ({navigation, route}) => {
 
   const sendImageMessage = async (imageAsset) => {
     if (!currentUser) return;
-    
+
     const imageMessage = {
       _id: Math.round(Math.random() * 1000000),
       text: '',
@@ -457,7 +469,7 @@ const ChatRoom = ({navigation, route}) => {
       user: currentUser,
       image: imageAsset.uri,
     };
-    
+
     const updatedMessages = [imageMessage, ...messages];
     setMessages(updatedMessages);
     await saveMessagesToLocal(updatedMessages);
@@ -466,10 +478,10 @@ const ChatRoom = ({navigation, route}) => {
     try {
       const token = await getAuthToken();
       if (token) {
-       
+
         try {
           const ReactNativeBlobUtil = require('react-native-blob-util').default;
-          
+
           const uploadUrl = `${chatApiService.baseURL}api/chat/send-media`;
           const token = await getAuthToken();
 
@@ -512,20 +524,20 @@ const ChatRoom = ({navigation, route}) => {
             throw new Error(responseData.message || 'Upload failed');
           }
         } catch (blobError) {
-         
+
           const uploadUrl = `${chatApiService.baseURL}api/chat/send-media`;
           const token = await getAuthToken();
-          
-        
+
+
           const uploadFormData = new FormData();
-          
-        
+
+
           const fileData = {
             uri: imageAsset.uri,
             type: imageAsset.type || 'image/jpeg',
             name: imageAsset.fileName || `image_${Date.now()}.jpg`,
           };
-          
+
           uploadFormData.append('file', fileData);
           uploadFormData.append('type', 'image');
           uploadFormData.append('recipientId', userId);
@@ -541,12 +553,12 @@ const ChatRoom = ({navigation, route}) => {
             },
             body: uploadFormData,
           });
-          
+
           if (!uploadResponse.ok) {
             const errorText = await uploadResponse.text();
             throw new Error(`HTTP ${uploadResponse.status}: ${errorText}`);
           }
-          
+
           const responseData = await uploadResponse.json();
 
           if (responseData.success) {
@@ -568,14 +580,14 @@ const ChatRoom = ({navigation, route}) => {
 
   const sendLikeSticker = async () => {
     if (!currentUser) return;
-    
+
     const likeMessage = {
       _id: Math.round(Math.random() * 1000000),
       text: '👍',
       createdAt: new Date(),
       user: currentUser,
     };
-    
+
     const updatedMessages = [likeMessage, ...messages];
     setMessages(updatedMessages);
     await saveMessagesToLocal(updatedMessages);
@@ -602,11 +614,22 @@ const ChatRoom = ({navigation, route}) => {
     }
   };
 
-  const renderMessage = ({item}) => {
+  const renderMessage = ({ item }) => {
     if (!currentUser) return null;
-    
+
+    // Convert both IDs to strings for comparison
     const isMyMessage = item.user._id?.toString() === currentUser._id?.toString();
-    
+
+    // Debug image rendering
+    if (item.image) {
+      console.log('🖼️ Rendering message with image:', {
+        messageId: item._id,
+        imageUrl: item.image,
+        type: item.type,
+        text: item.text
+      });
+    }
+
     return (
       <View style={[
         styles.messageContainer,
@@ -624,8 +647,8 @@ const ChatRoom = ({navigation, route}) => {
             isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble
           ]}>
             {item.image && (
-              <SafeImage 
-                source={item.image} 
+              <SafeImage
+                source={item.image}
                 style={styles.messageImage}
               />
             )}
@@ -666,7 +689,7 @@ const ChatRoom = ({navigation, route}) => {
           <TouchableOpacity onPress={handleImagePicker} style={styles.actionButton}>
             <Camera size={22} color="#FFFFFF" />
           </TouchableOpacity>
-          
+
           <TextInput
             style={styles.textInput}
             placeholder={t('chatroom.message')}
@@ -682,14 +705,14 @@ const ChatRoom = ({navigation, route}) => {
             blurOnSubmit={false}
             returnKeyType="send"
           />
-          
+
           {inputText.trim() ? (
             <TouchableOpacity onPress={onSend} style={styles.sendButton}>
               <Send size={20} color="#FF3B6D" />
             </TouchableOpacity>
           ) : null}
         </View>
-        
+
         <TouchableOpacity onPress={sendLikeSticker} style={styles.likeButton}>
           <ThumbsUp size={26} color="#FF3B6D" />
         </TouchableOpacity>
@@ -699,7 +722,7 @@ const ChatRoom = ({navigation, route}) => {
 
   return (
     <ChatErrorBoundary onRetry={initializeChat}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
@@ -707,27 +730,27 @@ const ChatRoom = ({navigation, route}) => {
       >
         <LinearGradient colors={['#5D1F3A', '#38152C', '#070A1A']} style={styles.container}>
           <StatusBar barStyle="light-content" backgroundColor="#5D1F3A" />
-          
-         
-          <View style={styles.header}>
-            <TouchableOpacity 
+
+
+          <View style={[styles.header, { paddingTop: Platform.OS === 'android' && insets.top + 10 }]}>
+            <TouchableOpacity
               style={styles.backButton}
               onPress={() => navigation.goBack()}
             >
-              <Image 
-                        source={require('../../Assets/images/backicon.png')} 
-                        style={styles.backIcon}
-                      />
+              <Image
+                source={require('../../Assets/images/backicon.png')}
+                style={styles.backIcon}
+              />
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.userInfo}
-              onPress={() => navigation.navigate('ProfileDetails', { 
+              onPress={() => navigation.navigate('ProfileDetails', {
                 profile: {
                   id: userId,
                   name: userName,
                   image: userImage,
-                  photos: userImage ? [{url: userImage}] : []
+                  photos: userImage ? [{ url: userImage }] : []
                 }
               })}
             >
@@ -740,18 +763,18 @@ const ChatRoom = ({navigation, route}) => {
                 <Text style={styles.userStatus}>{t('chatroom.online')}</Text>
               </View>
             </TouchableOpacity>
-            
+
             <View style={styles.headerRight} />
           </View>
 
-        
+
           <View style={styles.todayContainer}>
             <View style={styles.todayBadge}>
               <Text style={styles.todayText}>{t('chatroom.today')}</Text>
             </View>
           </View>
 
-        
+
           {loading ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>{t('chatroom.loading_messages')}</Text>
@@ -775,7 +798,7 @@ const ChatRoom = ({navigation, route}) => {
             />
           )}
 
-        
+
           {renderInputToolbar()}
         </LinearGradient>
       </KeyboardAvoidingView>

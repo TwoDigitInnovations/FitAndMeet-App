@@ -16,20 +16,23 @@ import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
 import { deleteAuthToken } from '../../utils/storage';
 import { AuthContext } from '../../../App';
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../../components/LanguageSelector';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 300;
 const topPadding = isSmallScreen ? 35 : 50;
 
-const Settings = ({navigation}) => {
-  const {t} = useTranslation();
+const Settings = ({ navigation }) => {
+  const { t } = useTranslation();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  
+  const insets = useSafeAreaInsets();
+
+
   // Get logout function from AuthContext
   const { logout } = useContext(AuthContext);
 
@@ -41,7 +44,7 @@ const Settings = ({navigation}) => {
     try {
       setLoading(true);
       const response = await apiService.GetApi('api/profile/stats');
-      
+
       if (response.success) {
         setProfileData(response.data);
       } else {
@@ -60,33 +63,33 @@ const Settings = ({navigation}) => {
   };
 
   const confirmLogout = async () => {
-    if (loggingOut) return; // Prevent multiple clicks
-    
+    if (loggingOut) return; 
+
     try {
-      console.log("🚪 Logout initiated from Settings");
+      console.log("Logout initiated from Settings");
       setLoggingOut(true);
       setShowLogoutModal(false);
-      
-      // Call API to logout (optional)
+
+   
       try {
         await apiService.Post('api/profile/logout', {});
-        console.log("✅ API logout successful");
+       
       } catch (apiError) {
-        console.log("⚠️ API logout failed, but continuing with local logout:", apiError);
+        console.log(" API logout failed, but continuing with local logout:", apiError);
       }
-      
+
       // Delete auth token
       await deleteAuthToken();
-      
+
       // Use the logout function from AuthContext
       if (logout) {
         await logout();
       }
-      
+
       console.log("✅ Logout completed successfully");
     } catch (error) {
       console.error('❌ Logout error:', error);
-      
+
       // Even if there's an error, try to logout locally
       try {
         await deleteAuthToken();
@@ -139,13 +142,14 @@ const Settings = ({navigation}) => {
       locations={[0, 0.4, 0.9, 1]}
       style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#571D38" />
-      
-    
-      <View style={styles.header}>
+
+
+      <View style={[styles.header, { paddingTop: Platform.OS === 'android' && insets.top + 10 }]}>
+
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Image 
-              source={require('../../Assets/images/backicon.png')} 
+            <Image
+              source={require('../../Assets/images/backicon.png')}
               style={styles.backIcon}
             />
           </TouchableOpacity>
@@ -153,22 +157,22 @@ const Settings = ({navigation}) => {
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.headerIcon}>
-            <Image 
-              source={require('../../Assets/images/veri.png')} 
+            <Image
+              source={require('../../Assets/images/veri.png')}
               style={styles.helpIcon}
             />
           </TouchableOpacity>
-          {/* <TouchableOpacity style={styles.headerIcon}>
-            <Image 
-              source={require('../../Assets/images/setting.png')} 
+          <TouchableOpacity style={styles.headerIcon}>
+            <Image
+              source={require('../../Assets/images/setting.png')}
               style={styles.settingIcon}
             />
-          </TouchableOpacity> */}
+          </TouchableOpacity> 
         </View>
       </View>
 
-      <ScrollView 
-        style={styles.scrollView} 
+      <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         bounces={true}
@@ -184,8 +188,8 @@ const Settings = ({navigation}) => {
           <View style={styles.nameContainer}>
             <Text style={styles.profileName}>{getDisplayName()}</Text>
             {profileData?.user?.isVerified && (
-              <Image 
-                source={require('../../Assets/images/veri.png')} 
+              <Image
+                source={require('../../Assets/images/veri.png')}
                 style={styles.verifiedIcon}
               />
             )}
@@ -206,7 +210,7 @@ const Settings = ({navigation}) => {
                 <Text style={styles.cardSubtitle}>{t('settings.to_stand_out')}</Text>
               </View>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.editButton}
               onPress={() => navigation.navigate('EditProfile')}
             >
@@ -220,8 +224,8 @@ const Settings = ({navigation}) => {
           <View style={styles.cardHeader}>
             <View style={styles.fitMeetHeader}>
               <View style={styles.fitMeetIcon}>
-                <Image 
-                  source={require('../../Assets/images/profileicon.png')} 
+                <Image
+                  source={require('../../Assets/images/profileicon.png')}
                   style={styles.profileIconImage}
                 />
               </View>
@@ -233,7 +237,7 @@ const Settings = ({navigation}) => {
               </Text>
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.featureHeaderRow}>
             <Text style={styles.whatsIncluded}>{t('settings.whats_included')}</Text>
             <View style={styles.freeHeaderContainer}>
@@ -241,44 +245,44 @@ const Settings = ({navigation}) => {
               <Text style={styles.freeHeaderText}>{t('settings.free')}</Text>
             </View>
           </View>
-          
+
           {profileData?.subscription?.features?.map((feature, index) => (
             <View key={index} style={styles.featureRow}>
               <Text style={styles.featureText}>
-                {feature.name === 'Top picks' ? t('settings.top_picks') : 
-                 feature.name === 'See whos like you' ? t('settings.see_whos_like_you') : 
-                 feature.name}
+                {feature.name === 'Top picks' ? t('settings.top_picks') :
+                  feature.name === 'See whos like you' ? t('settings.see_whos_like_you') :
+                    feature.name}
               </Text>
               <View style={styles.featureStatus}>
-                <Image 
-                  source={require('../../Assets/images/tick.png')} 
+                <Image
+                  source={require('../../Assets/images/tick.png')}
                   style={[styles.tickIcon, { opacity: feature.freeAccess ? 1 : 0.3 }]}
                 />
-                <Image 
-                  source={require('../../Assets/images/tick.png')} 
+                <Image
+                  source={require('../../Assets/images/tick.png')}
                   style={[styles.tickIcon, { opacity: feature.premiumAccess ? 1 : 0.3 }]}
                 />
               </View>
             </View>
           ))}
-          
+
           <View style={styles.seeAllFeaturesContainer}>
             <TouchableOpacity style={styles.seeAllFeatures}>
               <Text style={styles.featureText}>{t('settings.see_all_features')}</Text>
-              <Image 
-                source={require('../../Assets/images/right.png')} 
+              <Image
+                source={require('../../Assets/images/right.png')}
                 style={styles.rightIcon}
               />
-            </TouchableOpacity>
-          </View>
-        </View>
+            </TouchableOpacity >
+          </View >
+        </View >
 
         {/* Super Likes Card */}
-        <View style={styles.smallCard}>
+        < View style={styles.smallCard} >
           <View style={styles.smallCardContent}>
             <View style={styles.smallCardLeft}>
-              <Image 
-                source={require('../../Assets/images/star.png')} 
+              <Image
+                source={require('../../Assets/images/star.png')}
                 style={styles.starIcon}
               />
               <View style={styles.smallCardText}>
@@ -289,20 +293,20 @@ const Settings = ({navigation}) => {
               </View>
             </View>
             <TouchableOpacity style={styles.plusButton}>
-              <Image 
-                source={require('../../Assets/images/plus.png')} 
+              <Image
+                source={require('../../Assets/images/plus.png')}
                 style={styles.plusIcon}
               />
             </TouchableOpacity>
           </View>
-        </View>
+        </View >
 
         {/* Free For Now Card */}
-        <View style={styles.smallCard}>
+        < View style={styles.smallCard} >
           <View style={styles.smallCardContent}>
             <View style={styles.smallCardLeft}>
-              <Image 
-                source={require('../../Assets/images/gift.png')} 
+              <Image
+                source={require('../../Assets/images/gift.png')}
                 style={styles.giftIcon}
               />
               <View style={styles.smallCardText}>
@@ -312,20 +316,20 @@ const Settings = ({navigation}) => {
               </View>
             </View>
             <TouchableOpacity>
-              <Image 
-                source={require('../../Assets/images/rightarrow.png')} 
+              <Image
+                source={require('../../Assets/images/rightarrow.png')}
                 style={styles.rightArrowIcon}
               />
             </TouchableOpacity>
           </View>
-        </View>
+        </View >
 
         {/* Viewed Profile Card */}
-        <View style={styles.smallCard}>
+        < View style={styles.smallCard} >
           <View style={styles.smallCardContent}>
             <View style={styles.smallCardLeft}>
-              <Image 
-                source={require('../../Assets/images/eye.png')} 
+              <Image
+                source={require('../../Assets/images/eye.png')}
                 style={styles.eyeIcon}
               />
               <View style={styles.smallCardText}>
@@ -336,16 +340,16 @@ const Settings = ({navigation}) => {
               </View>
             </View>
             <TouchableOpacity style={styles.plusButton}>
-              <Image 
-                source={require('../../Assets/images/plus.png')} 
+              <Image
+                source={require('../../Assets/images/plus.png')}
                 style={styles.plusIcon}
               />
             </TouchableOpacity>
           </View>
-        </View>
+        </View >
 
         {/* Language Selector */}
-        <View style={styles.languageCard}>
+        < View style={styles.languageCard} >
           <View style={styles.smallCardContent}>
             <View style={styles.smallCardLeft}>
               <View style={styles.smallCardText}>
@@ -354,55 +358,55 @@ const Settings = ({navigation}) => {
             </View>
             <LanguageSelector />
           </View>
-        </View>
+        </View >
 
         {/* Logout */}
-        <View style={styles.logoutCard}>
+        < View style={styles.logoutCard} >
           <TouchableOpacity style={styles.smallCardContent} onPress={handleLogout}>
             <Text style={styles.smallCardTitle}>{t('settings.logout')}</Text>
-            <Image 
-              source={require('../../Assets/images/exit.png')} 
+            <Image
+              source={require('../../Assets/images/exit.png')}
               style={styles.exitIcon}
             />
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+          </TouchableOpacity >
+        </View >
+      </ScrollView >
 
       {/* Custom Logout Confirmation Modal */}
-      <Modal
+      < Modal
         visible={showLogoutModal}
         transparent={true}
         animationType="fade"
-        onRequestClose={cancelLogout}>
+        onRequestClose={cancelLogout} >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
               {/* Exit Icon */}
               <View style={styles.modalIconContainer}>
-                <Image 
-                  source={require('../../Assets/images/exit.png')} 
+                <Image
+                  source={require('../../Assets/images/exit.png')}
                   style={styles.modalExitIcon}
                 />
               </View>
-              
+
               {/* Title */}
               <Text style={styles.modalTitle}>{t('settings.logout')}</Text>
-              
+
               {/* Message */}
               <Text style={styles.modalMessage}>
                 {t('settings.logout_confirmation')}
               </Text>
-              
+
               {/* Buttons */}
               <View style={styles.modalButtons}>
-                <TouchableOpacity 
-                  style={styles.cancelButton} 
+                <TouchableOpacity
+                  style={styles.cancelButton}
                   onPress={cancelLogout}>
                   <Text style={styles.cancelButtonText}>{t('firstname.cancel')}</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.logoutButton, loggingOut && styles.logoutButtonDisabled]} 
+
+                <TouchableOpacity
+                  style={[styles.logoutButton, loggingOut && styles.logoutButtonDisabled]}
                   onPress={confirmLogout}
                   disabled={loggingOut}
                   activeOpacity={0.7}>
@@ -413,11 +417,11 @@ const Settings = ({navigation}) => {
                   )}
                 </TouchableOpacity>
               </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    </LinearGradient>
+            </View >
+          </View >
+        </View >
+      </Modal >
+    </LinearGradient >
   );
 };
 
@@ -607,8 +611,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 3,
     borderRadius: 20,
-    borderColor:'white',
-    borderWidth:1
+    borderColor: 'white',
+    borderWidth: 1
   },
   editButtonText: {
     color: 'white',
@@ -628,8 +632,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 6,
     borderRadius: 15,
-    borderColor:'white',
-    borderWidth:1
+    borderColor: 'white',
+    borderWidth: 1
   },
   upgradeButtonText: {
     color: 'white',

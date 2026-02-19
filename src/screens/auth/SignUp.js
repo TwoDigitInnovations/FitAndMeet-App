@@ -1,4 +1,4 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,10 +15,15 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiService from '../../services/apiService';
-import CountryPicker from 'react-native-country-picker-modal';
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Constants from '../../utils/Constant';
+import PhoneInput, {
+  ICountry,
+  isValidPhoneNumber,
+} from 'react-native-international-phone-number';
 
-const SignUp = ({navigation}) => {
+const SignUp = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [showOTP, setShowOTP] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '']);
@@ -30,9 +35,11 @@ const SignUp = ({navigation}) => {
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [phoneLength, setPhoneLength] = useState(10); // Default US phone length
   const otpRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
-  const {t} = useTranslation();
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const [selectedCountry, setSelectedCountry] = useState(null);
 
- 
+  console.log(insets.top)
   const getPhoneLength = (country) => {
     const phoneLengths = {
       US: 10,    // United States
@@ -97,7 +104,7 @@ const SignUp = ({navigation}) => {
       UG: 9,     // Uganda
       ET: 9,     // Ethiopia
     };
-    return phoneLengths[country] || 10; 
+    return phoneLengths[country] || 10;
   };
 
   useEffect(() => {
@@ -119,17 +126,32 @@ const SignUp = ({navigation}) => {
     }
   };
 
+  function handleInputValue(pNumber) {
+    console.log(pNumber)
+    setPhoneNumber(pNumber);
+  }
+
+  function handleSelectedCountry(country) {
+    console.log(country)
+    setSelectedCountry(country);
+  }
+
   const handleContinueWithEmail = () => {
     console.log('Continue with email');
   };
 
   const handlePhoneSubmit = async () => {
     const expectedLength = getPhoneLength(countryCode);
-    
-    if (phoneNumber.length !== expectedLength) {
+
+    const isValid = isValidPhoneNumber(
+      phoneNumber,
+      selectedCountry
+    );
+
+    if (!isValid) {
       Alert.alert(
-        t('auth.otp.invalid_phone'), 
-        t('auth.otp.invalid_phone_message', {length: expectedLength})
+        t('auth.otp.invalid_phone'),
+        t('auth.otp.invalid_phone_message', { length: expectedLength })
       );
       return;
     }
@@ -147,10 +169,10 @@ const SignUp = ({navigation}) => {
       if (response.success) {
         setUserId(response.userId);
         setShowOTP(true);
-        
+
         if (response.continueRegistration) {
           Alert.alert(
-            'Continue Registration', 
+            'Continue Registration',
             'Complete your registration process.\nUse 0000 as OTP for testing'
           );
         } else {
@@ -159,7 +181,7 @@ const SignUp = ({navigation}) => {
       } else {
         if (response.accountExists) {
           Alert.alert(
-            'Account Exists', 
+            'Account Exists',
             response.message + '\n\nWould you like to sign in instead?',
             [
               { text: 'Cancel', style: 'cancel' },
@@ -180,7 +202,7 @@ const SignUp = ({navigation}) => {
 
   const handleOtpChange = async (value, index) => {
     if (value.length > 1) return;
-    
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
@@ -193,7 +215,7 @@ const SignUp = ({navigation}) => {
     if (value && index === 3) {
       const fullOtp = [...newOtp.slice(0, 3), value].join('');
       if (fullOtp.length === 4) {
-       
+
         await verifyOTP(fullOtp);
       }
     }
@@ -250,7 +272,7 @@ const SignUp = ({navigation}) => {
 
   const handleResendOTP = async () => {
     if (timer > 0) return;
-    
+
     setLoading(true);
     try {
       const response = await apiService.PostPublic('api/auth/send-otp', {
@@ -278,7 +300,9 @@ const SignUp = ({navigation}) => {
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        {Platform.OS === 'android' && <View style={{ height: insets.top, backgroundColor: Constants.mainTheme }}>
+          <Text></Text>
+        </View>}
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled">
@@ -290,7 +314,7 @@ const SignUp = ({navigation}) => {
             />
           </TouchableOpacity>
 
-          <Text style={styles.title}>{t('auth.otp.title')}</Text>
+          <Text style={[styles.title, { marginTop: Platform.OS === 'android' ? insets.top + 20 : 40 }]}>{t('auth.otp.title')}</Text>
           <Text style={styles.subtitle}>
             {t('auth.otp.subtitle')}
           </Text>
@@ -338,7 +362,9 @@ const SignUp = ({navigation}) => {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      {Platform.OS === 'android' && <View style={{ height: insets.top, backgroundColor: Constants.mainTheme }}>
+        <Text></Text>
+      </View>}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled">
@@ -350,10 +376,10 @@ const SignUp = ({navigation}) => {
           />
         </TouchableOpacity>
 
-        <Text style={styles.title}>{t('auth.signup.title')}</Text>
+        <Text style={[styles.title, { marginTop: Platform.OS === 'android' ? insets.top + 20 : 40 }]}>{t('auth.signup.title')}</Text>
 
         <View style={styles.phoneContainer}>
-          <TouchableOpacity 
+          {/* <TouchableOpacity
             style={styles.countryCode}
             onPress={() => setShowCountryPicker(true)}>
             <CountryPicker
@@ -366,7 +392,7 @@ const SignUp = ({navigation}) => {
                 setCountryCode(country.cca2);
                 setCallingCode(country.callingCode[0]);
                 setPhoneLength(getPhoneLength(country.cca2));
-                setPhoneNumber(''); 
+                setPhoneNumber('');
               }}
               visible={showCountryPicker}
               onClose={() => setShowCountryPicker(false)}
@@ -382,6 +408,14 @@ const SignUp = ({navigation}) => {
             onChangeText={setPhoneNumber}
             onSubmitEditing={handlePhoneSubmit}
             maxLength={phoneLength}
+          /> */}
+          <PhoneInput
+            value={phoneNumber}
+            onChangePhoneNumber={handleInputValue}
+            selectedCountry={selectedCountry}
+            onChangeSelectedCountry={handleSelectedCountry}
+            returnKeyType="go"
+            onSubmitEditing={handlePhoneSubmit}
           />
         </View>
 
@@ -420,16 +454,14 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 140, 
   },
   backButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
-    marginBottom: 20,  
+    marginBottom: 20,
     marginLeft: -5,
     position: 'absolute',
-    top: 40,
     left: 20,
     zIndex: 10,
   },
@@ -441,9 +473,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#000000',
-    marginBottom: 70,  
+    // marginBottom: 70,
     lineHeight: 36,
-    marginTop: -40,  
+    // marginTop: -40,
   },
   subtitle: {
     fontSize: 14,
@@ -458,6 +490,7 @@ const styles = StyleSheet.create({
   phoneContainer: {
     flexDirection: 'row',
     marginBottom: 30,
+    marginTop: 80
   },
   countryCode: {
     width: 90,

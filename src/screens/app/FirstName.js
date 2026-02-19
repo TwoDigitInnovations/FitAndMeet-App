@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,13 +11,15 @@ import {
   ActivityIndicator,
   Platform,
   ScrollView,
+  Modal,
 } from 'react-native';
-import DatePicker from 'react-native-date-picker';
 import apiService from '../../services/apiService';
 import CameraGalleryPicker from '../../components/CameraGalleryPeacker';
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import RNDateTimePicker from '@react-native-community/datetimepicker';
+import CustomeModal from '../../components/CustomeModal'
 
-const FirstName = ({navigation}) => {
+const FirstName = ({ navigation }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [firstName, setFirstName] = useState('');
   const [birthday, setBirthday] = useState('');
@@ -32,8 +34,8 @@ const FirstName = ({navigation}) => {
   const [photos, setPhotos] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(null);
-  const {t} = useTranslation();
-  
+  const { t } = useTranslation();
+
   const cameraGalleryRef = useRef(null);
 
   const handleBack = () => {
@@ -47,40 +49,43 @@ const FirstName = ({navigation}) => {
 
   const handleNext = async () => {
     if (currentStep === 1 && firstName.trim()) {
-      await updateProfile({firstName: firstName.trim(), currentStep: 2});
+      await updateProfile({ firstName: firstName.trim(), currentStep: 2 });
       setCurrentStep(2);
     } else if (currentStep === 2 && birthday.trim()) {
       const age = calculateAge(birthday);
-      await updateProfile({birthday: birthday.trim(), age, currentStep: 3});
+      await updateProfile({ birthday: birthday.trim(), age, currentStep: 3 });
       setCurrentStep(3);
     } else if (currentStep === 3 && gender) {
-      await updateProfile({gender, currentStep: 4});
+      await updateProfile({ gender, currentStep: 4 });
       setCurrentStep(4);
     } else if (currentStep === 4 && interestedIn) {
-      await updateProfile({interestedIn, currentStep: 5});
+      await updateProfile({ interestedIn, currentStep: 5 });
       setCurrentStep(5);
     } else if (currentStep === 5 && lookingFor) {
-      await updateProfile({lookingFor, currentStep: 6});
+      await updateProfile({ lookingFor, currentStep: 6 });
       setCurrentStep(6);
-    } else if (currentStep === 6 && ageRanges.length > 0) {
-      await updateProfile({ageRange: ageRanges, currentStep: 7});
+    } else if (currentStep === 6 && ageRange) {
+      await updateProfile({ageRange, currentStep: 7});
       setCurrentStep(7);
     } else if (currentStep === 7 && interests.length > 0) {
-      await updateProfile({interests, currentStep: 8});
+      await updateProfile({ interests, currentStep: 8 });
       setCurrentStep(8);
     } else if (currentStep === 8 && bio.trim()) {
-      await updateProfile({bio: bio.trim(), currentStep: 9});
+      await updateProfile({ bio: bio.trim(), currentStep: 9 });
       setCurrentStep(9);
     } else if (currentStep === 9 && photos.length > 0) {
       await completeRegistration();
     }
   };
 
-  const handleDateConfirm = (date) => {
-    setSelectedDate(date);
-    const formattedDate = formatDate(date);
+  const handleDateConfirm = (event, date) => {
+    console.log(date)
+    setSelectedDate(new Date(date));
+    const formattedDate = formatDate(new Date(date));
     setBirthday(formattedDate);
-    setDatePickerOpen(false);
+    if (Platform.OS === 'android') {
+      setDatePickerOpen(false);
+    }
   };
 
   const formatDate = (date) => {
@@ -94,35 +99,35 @@ const FirstName = ({navigation}) => {
     // Auto-format as user types: DD/MM/YYYY
     let cleaned = text.replace(/\D/g, ''); // Remove non-digits
     let formatted = cleaned;
-    
+
     if (cleaned.length >= 2) {
       formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
     }
     if (cleaned.length >= 4) {
       formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4) + '/' + cleaned.slice(4, 8);
     }
-    
+
     setBirthday(formatted);
   };
 
   const validateDate = (dateStr) => {
     const parts = dateStr.split('/');
     if (parts.length !== 3) return false;
-    
+
     const day = parseInt(parts[0]);
     const month = parseInt(parts[1]);
     const year = parseInt(parts[2]);
-    
+
     if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1950 || year > new Date().getFullYear()) {
       return false;
     }
-    
+
     const date = new Date(year, month - 1, day);
     return date.getDate() === day && date.getMonth() === month - 1 && date.getFullYear() === year;
   };
 
   const calculateAge = (birthdayStr) => {
-  
+
     const parts = birthdayStr.split('/').map(p => p.trim());
     if (parts.length === 3) {
       const birthDate = new Date(parts[2], parts[1] - 1, parts[0]);
@@ -153,26 +158,28 @@ const FirstName = ({navigation}) => {
     setUploading(true);
     try {
       const response = await apiService.Post('api/registration/complete', {});
-      
+
       if (response.success) {
         // Registration completed successfully
         Alert.alert(
-          t('firstname.registration_complete'), 
+          t('firstname.registration_complete'),
           t('firstname.registration_complete_message'),
           [
-            { text: t('firstname.get_started'), onPress: () => {
-              // Navigate directly to TabNav (Home screen)
-              navigation.reset({
-                index: 0,
-                routes: [{name: 'TabNav'}],
-              });
-            }}
+            {
+              text: t('firstname.get_started'), onPress: () => {
+                // Navigate directly to TabNav (Home screen)
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'TabNav' }],
+                });
+              }
+            }
           ]
         );
       } else {
         if (response.missingFields && response.missingFields.length > 0) {
           Alert.alert(
-            t('firstname.profile_incomplete'), 
+            t('firstname.profile_incomplete'),
             `Please complete the following: ${response.missingFields.join(', ')}`
           );
         } else {
@@ -194,7 +201,7 @@ const FirstName = ({navigation}) => {
 
   const handleImageSelected = async (response) => {
     console.log('Image selected:', response);
-    
+
     if (!response || !response.assets || !response.assets[0]) {
       console.log('No image selected');
       return;
@@ -202,7 +209,7 @@ const FirstName = ({navigation}) => {
 
     const image = response.assets[0];
     const index = currentPhotoIndex;
-    
+
     setUploading(true);
     try {
       const uploadResponse = await apiService.UploadFile(
@@ -220,10 +227,10 @@ const FirstName = ({navigation}) => {
           uploadedAt: new Date(),
         };
         setPhotos(newPhotos);
-        
-       
-        await updateProfile({photos: newPhotos});
-        
+
+
+        await updateProfile({ photos: newPhotos });
+
         Alert.alert(t('auth.otp.otp_sent'), t('firstname.photo_uploaded'));
       } else {
         Alert.alert(t('auth.otp.error'), uploadResponse.error || t('firstname.upload_error'));
@@ -376,7 +383,7 @@ const FirstName = ({navigation}) => {
     currentStep === 3 ? !gender : 
     currentStep === 4 ? !interestedIn : 
     currentStep === 5 ? !lookingFor : 
-    currentStep === 6 ? ageRanges.length === 0 : 
+    currentStep === 6 ? !ageRange : 
     currentStep === 7 ? interests.length === 0 : 
     currentStep === 8 ? !bio.trim() : 
     currentStep === 9 ? photos.length === 0 : false;
@@ -389,19 +396,19 @@ const FirstName = ({navigation}) => {
         translucent={false}
       />
 
-     
+
       <View style={styles.header}>
-      
+
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, {width: stepData.progress}]} />
+          <View style={[styles.progressFill, { width: stepData.progress }]} />
         </View>
 
-     
+
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Text style={styles.backIcon}>‹</Text>
         </TouchableOpacity>
 
-      
+
         <View style={styles.profileIconContainer}>
           <Image
             source={stepData.image}
@@ -412,7 +419,7 @@ const FirstName = ({navigation}) => {
       </View>
 
       {/* Content */}
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -420,73 +427,74 @@ const FirstName = ({navigation}) => {
         <View style={styles.content}>
           <Text style={styles.title}>{stepData.title}</Text>
 
-        {stepData.isGenderStep ? (
-          <View>
-            {stepData.subtitle}
-            
-            <Text style={styles.iAmText}>{t('firstname.i_am')}</Text>
-            
-            <TouchableOpacity 
-              style={styles.genderOption} 
-              onPress={() => setGender('Man')}>
-              <Text style={styles.genderText}>{t('firstname.man')}</Text>
-              <View style={[styles.radioButton, gender === 'Man' && styles.radioButtonSelected]}>
-                {gender === 'Man' && <View style={styles.radioButtonInner} />}
-              </View>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.genderOption} 
-              onPress={() => setGender('Woman')}>
-              <Text style={styles.genderText}>{t('firstname.woman')}</Text>
-              <View style={[styles.radioButton, gender === 'Woman' && styles.radioButtonSelected]}>
-                {gender === 'Woman' && <View style={styles.radioButtonInner} />}
-              </View>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.genderOption} 
-              onPress={() => setGender('Other')}>
-              <Text style={styles.genderText}>{t('firstname.other')}</Text>
-              <View style={[styles.radioButton, gender === 'Other' && styles.radioButtonSelected]}>
-                {gender === 'Other' && <View style={styles.radioButtonInner} />}
-              </View>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.learnMoreButton}>
-              {/* <Text style={styles.learnMoreText}>Learn how Fit & Meet uses this info</Text> */}
-            </TouchableOpacity>
-          </View>
-        ) : stepData.isPhotoStep ? (
-          <View>
-            {stepData.subtitle}
-            
-            <View style={styles.photoGrid}>
-              {[0, 1, 2, 3, 4].map((index) => (
-                <TouchableOpacity 
-                  key={index}
-                  style={[
-                    styles.photoSlot,
-                    photos[index] && styles.photoSlotSelected
-                  ]} 
-                  onPress={() => handlePhotoUpload(index)}
-                  disabled={uploading}>
-                  {photos[index] ? (
-                    <Image
-                      source={{uri: photos[index].uri}}
-                      style={styles.photoImage}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <Image
-                      source={require('../../Assets/images/camm.png')}
-                      style={styles.cameraImage}
-                      resizeMode="contain"
-                    />
-                  )}
+          {stepData.isGenderStep ?
+            (
+              <View>
+                {stepData.subtitle}
+
+                <Text style={styles.iAmText}>{t('firstname.i_am')}</Text>
+
+                <TouchableOpacity
+                  style={styles.genderOption}
+                  onPress={() => setGender('Man')}>
+                  <Text style={styles.genderText}>{t('firstname.man')}</Text>
+                  <View style={[styles.radioButton, gender === 'Man' && styles.radioButtonSelected]}>
+                    {gender === 'Man' && <View style={styles.radioButtonInner} />}
+                  </View>
                 </TouchableOpacity>
-              ))}
-            </View>
+
+                <TouchableOpacity
+                  style={styles.genderOption}
+                  onPress={() => setGender('Woman')}>
+                  <Text style={styles.genderText}>{t('firstname.woman')}</Text>
+                  <View style={[styles.radioButton, gender === 'Woman' && styles.radioButtonSelected]}>
+                    {gender === 'Woman' && <View style={styles.radioButtonInner} />}
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.genderOption}
+                  onPress={() => setGender('Other')}>
+                  <Text style={styles.genderText}>{t('firstname.other')}</Text>
+                  <View style={[styles.radioButton, gender === 'Other' && styles.radioButtonSelected]}>
+                    {gender === 'Other' && <View style={styles.radioButtonInner} />}
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.learnMoreButton}>
+                  {/* <Text style={styles.learnMoreText}>Learn how Fit & Meet uses this info</Text> */}
+                </TouchableOpacity>
+              </View>
+            ) : stepData.isPhotoStep ? (
+              <View>
+                {stepData.subtitle}
+
+                <View style={styles.photoGrid}>
+                  {[0, 1, 2, 3, 4].map((index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.photoSlot,
+                        photos[index] && styles.photoSlotSelected
+                      ]}
+                      onPress={() => handlePhotoUpload(index)}
+                      disabled={uploading}>
+                      {photos[index] ? (
+                        <Image
+                          source={{ uri: photos[index].uri }}
+                          style={styles.photoImage}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <Image
+                          source={require('../../Assets/images/camm.png')}
+                          style={styles.cameraImage}
+                          resizeMode="contain"
+                        />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
 
             {uploading && (
               <View style={styles.uploadingContainer}>
@@ -560,51 +568,27 @@ const FirstName = ({navigation}) => {
             
             <View style={styles.ageRangeContainer}>
               <TouchableOpacity 
-                style={[styles.ageRangeButton, ageRanges.includes('18-25') && styles.ageRangeButtonSelected]} 
-                onPress={() => {
-                  if (ageRanges.includes('18-25')) {
-                    setAgeRanges(ageRanges.filter(r => r !== '18-25'));
-                  } else {
-                    setAgeRanges([...ageRanges, '18-25']);
-                  }
-                }}>
-                <Text style={[styles.ageRangeText, ageRanges.includes('18-25') && styles.ageRangeTextSelected]}>{t('firstname.age_18_25')}</Text>
+                style={[styles.ageRangeButton, ageRange === '18-25' && styles.ageRangeButtonSelected]} 
+                onPress={() => setAgeRange('18-25')}>
+                <Text style={[styles.ageRangeText, ageRange === '18-25' && styles.ageRangeTextSelected]}>{t('firstname.age_18_25')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[styles.ageRangeButton, ageRanges.includes('25-35') && styles.ageRangeButtonSelected]} 
-                onPress={() => {
-                  if (ageRanges.includes('25-35')) {
-                    setAgeRanges(ageRanges.filter(r => r !== '25-35'));
-                  } else {
-                    setAgeRanges([...ageRanges, '25-35']);
-                  }
-                }}>
-                <Text style={[styles.ageRangeText, ageRanges.includes('25-35') && styles.ageRangeTextSelected]}>{t('firstname.age_25_35')}</Text>
+                style={[styles.ageRangeButton, ageRange === '25-35' && styles.ageRangeButtonSelected]} 
+                onPress={() => setAgeRange('25-35')}>
+                <Text style={[styles.ageRangeText, ageRange === '25-35' && styles.ageRangeTextSelected]}>{t('firstname.age_25_35')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[styles.ageRangeButton, ageRanges.includes('35-45') && styles.ageRangeButtonSelected]} 
-                onPress={() => {
-                  if (ageRanges.includes('35-45')) {
-                    setAgeRanges(ageRanges.filter(r => r !== '35-45'));
-                  } else {
-                    setAgeRanges([...ageRanges, '35-45']);
-                  }
-                }}>
-                <Text style={[styles.ageRangeText, ageRanges.includes('35-45') && styles.ageRangeTextSelected]}>{t('firstname.age_35_45')}</Text>
+                style={[styles.ageRangeButton, ageRange === '35-45' && styles.ageRangeButtonSelected]} 
+                onPress={() => setAgeRange('35-45')}>
+                <Text style={[styles.ageRangeText, ageRange === '35-45' && styles.ageRangeTextSelected]}>{t('firstname.age_35_45')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[styles.ageRangeButton, ageRanges.includes('45-Over') && styles.ageRangeButtonSelected]} 
-                onPress={() => {
-                  if (ageRanges.includes('45-Over')) {
-                    setAgeRanges(ageRanges.filter(r => r !== '45-Over'));
-                  } else {
-                    setAgeRanges([...ageRanges, '45-Over']);
-                  }
-                }}>
-                <Text style={[styles.ageRangeText, ageRanges.includes('45-Over') && styles.ageRangeTextSelected]}>{t('firstname.age_45_over')}</Text>
+                style={[styles.ageRangeButton, ageRange === '45-Over' && styles.ageRangeButtonSelected]} 
+                onPress={() => setAgeRange('45-Over')}>
+                <Text style={[styles.ageRangeText, ageRange === '45-Over' && styles.ageRangeTextSelected]}>{t('firstname.age_45_over')}</Text>
               </TouchableOpacity>
             </View>
             
@@ -720,7 +704,6 @@ const FirstName = ({navigation}) => {
               title={t('firstname.select_birthday')}
               confirmText={t('firstname.confirm')}
               cancelText={t('firstname.cancel')}
-              locale="en-GB"
             />
           </View>
         ) : (
@@ -738,24 +721,25 @@ const FirstName = ({navigation}) => {
           </View>
         )}
         </View>
-      </ScrollView>
+      </ScrollView >
 
       {/* Next Button */}
-      <View style={styles.buttonContainer}>
+      < View style={styles.buttonContainer} >
         <TouchableOpacity
           style={[
             styles.nextButton,
             (isNextDisabled || uploading) && styles.nextButtonDisabled,
           ]}
           onPress={handleNext}
-          disabled={isNextDisabled || uploading}>
+          disabled={isNextDisabled || uploading}
+        >
           {uploading ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
             <Text style={styles.nextButtonText}>{t('firstname.next_button')}</Text>
           )}
         </TouchableOpacity>
-      </View>
+      </View >
 
       <CameraGalleryPicker
         refs={cameraGalleryRef}
@@ -770,7 +754,42 @@ const FirstName = ({navigation}) => {
         quality={0.8}
         base64={false}
       />
-    </View>
+
+      {
+        Platform.OS === 'ios' && <CustomeModal
+          confirmButtonColor='#FF3B6D'
+          confirmButtonName={t('firstname.confirm')}
+          cancelButtonName={t('firstname.cancel')}
+          title={t('firstname.select_birthday')}
+          titleColor='#FF3B6D'
+          onCancel={() => { console.log('Canceled'); setDatePickerOpen(false) }}
+          onConfirm={() => { console.log('Confirmed'); setDatePickerOpen(false) }}
+          open={datePickerOpen}
+        >
+          <RNDateTimePicker
+            value={selectedDate}
+            mode="date"
+            maximumDate={new Date()}
+            minimumDate={new Date(1950, 0, 1)}
+            display='spinner'
+            onChange={handleDateConfirm}
+            title="Select your birthday" />
+        </CustomeModal>
+      }
+
+      {
+        Platform.OS === 'android' && datePickerOpen && <RNDateTimePicker
+          value={selectedDate}
+          mode="date"
+          maximumDate={new Date()}
+          minimumDate={new Date(1950, 0, 1)}
+          display='default'
+          onChange={handleDateConfirm}
+          title="Select your birthday"
+        />
+      }
+
+    </View >
   );
 };
 
@@ -793,7 +812,7 @@ const styles = StyleSheet.create({
   progressBar: {
     height: 3,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    marginTop: 50,
+    marginTop: Platform.OS === 'android' ? 50 : 20,
   },
   progressFill: {
     height: '100%',
