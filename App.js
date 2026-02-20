@@ -17,6 +17,7 @@ import apiService from './src/services/apiService';
 import './src/i18n';
 import { LanguageProvider } from './src/contexts/LanguageContext';
 import { initializeOneSignal } from './src/services/oneSignalService';
+import BootSplash from "react-native-bootsplash";
 
 export const LoadContext = createContext('');
 export const UserContext = createContext('');
@@ -127,6 +128,7 @@ function App() {
     } finally {
       console.log(" AUTHENTICATION CHECK COMPLETE ===");
       console.log("Final isAuthenticated value:", isAuthenticated);
+      // await BootSplash.hide({ fade: true });
     }
   }
 

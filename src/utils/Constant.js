@@ -1,7 +1,7 @@
-// const devUrl = 'https://api.fitandmeet.com/';
+const devUrl = 'https://api.fitandmeet.com/';
 
 //  const devUrl = 'http://10.0.2.2:5000/';  // Android Emulator (Backend runs on port 5000)
-  const devUrl = 'http://192.168.1.4:5000/';  // Real Device
+// const devUrl = 'http://192.168.1.4:5000/';  // Real Device
 
 let apiUrl = devUrl;
 export const Googlekey = 'AIzaSyBSJ4feXtXRl7L4BxOrMubz8fciujaMBTk';
