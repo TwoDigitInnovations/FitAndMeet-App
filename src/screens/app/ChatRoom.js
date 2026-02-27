@@ -13,10 +13,12 @@ import {
   Platform,
   Keyboard,
   Dimensions,
+  Modal,
+  PermissionsAndroid,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
-import { Camera, ThumbsUp, Send } from 'lucide-react-native';
+import { Camera, ThumbsUp, Send, X, Download } from 'lucide-react-native';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import io from 'socket.io-client';
 import { getAuthToken } from '../../utils/storage';
@@ -26,6 +28,7 @@ import SafeImage from '../../components/SafeImage';
 import ChatErrorBoundary from '../../components/ChatErrorBoundary';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ReactNativeBlobUtil from 'react-native-blob-util';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 300;
@@ -45,12 +48,13 @@ const ChatRoom = ({ navigation, route }) => {
   const [conversationId, setConversationId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
   const socketRef = useRef(null);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
     initializeChat();
-
 
     const keyboardDidShowListener = Keyboard.addListener(
       'keyboardDidShow',
@@ -61,18 +65,10 @@ const ChatRoom = ({ navigation, route }) => {
       () => setKeyboardVisible(false)
     );
 
-
-    const pollingInterval = setInterval(() => {
-      if (conversationId) {
-        loadMessagesFromBackend(true);
-      }
-    }, 1500);
-
     return () => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
       
-     
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -80,6 +76,14 @@ const ChatRoom = ({ navigation, route }) => {
     };
   }, [userId]);
 
+
+  useEffect(() => {
+    if (conversationId && currentUser && socketRef.current) {
+      if (socketRef.current.connected) {
+        socketRef.current.emit('join-conversation', conversationId);
+      }
+    }
+  }, [conversationId, currentUser]);
 
   useEffect(() => {
     if (conversationId && currentUser) {
@@ -144,6 +148,8 @@ const ChatRoom = ({ navigation, route }) => {
       socketURL = socketURL.replace(/\/$/, '');
       socketURL = socketURL.replace('/api', '');
 
+      console.log('Setting up socket connection to:', socketURL);
+
       socketRef.current = io(socketURL, {
         auth: { token },
         transports: ['websocket', 'polling'],
@@ -154,13 +160,17 @@ const ChatRoom = ({ navigation, route }) => {
       });
 
       socketRef.current.on('connect', () => {
+        console.log('Socket connected successfully');
         if (conversationId) {
+          console.log('Joining conversation room:', conversationId);
           socketRef.current.emit('join-conversation', conversationId);
+        } else {
+          console.log('No conversationId yet, will join when available');
         }
       });
 
       socketRef.current.on('disconnect', (reason) => {
-       
+        console.log('Socket disconnected:', reason);
       });
 
       socketRef.current.on('connect_error', (error) => {
@@ -172,6 +182,13 @@ const ChatRoom = ({ navigation, route }) => {
       });
 
       socketRef.current.on('new-message', (message) => {
+        console.log('✅ Received new message via socket:', {
+          id: message._id,
+          content: message.content,
+          mediaUrl: message.mediaUrl,
+          sender: message.sender?.firstName
+        });
+        
         const formattedMessage = {
           _id: message._id || Math.round(Math.random() * 1000000),
           text: message.content || '',
@@ -205,18 +222,6 @@ const ChatRoom = ({ navigation, route }) => {
           
           return [formattedMessage, ...prevMessages];
         });
-      });
-
-      socketRef.current.on('message-delivered', (messageId) => {
-        
-      });
-
-      socketRef.current.on('user-typing', (data) => {
-       
-      });
-
-      socketRef.current.on('messages-read', (data) => {
-        
       });
 
     } catch (error) {
@@ -611,14 +616,6 @@ const ChatRoom = ({ navigation, route }) => {
   const renderMessage = ({ item }) => {
     if (!currentUser) return null;
     const isMyMessage = item.user._id?.toString() === currentUser._id?.toString();
-    if (item.image) {
-      console.log('🖼️ Rendering message with image:', {
-        messageId: item._id,
-        imageUrl: item.image,
-        type: item.type,
-        text: item.text
-      });
-    }
 
     return (
       <View style={[
@@ -637,10 +634,12 @@ const ChatRoom = ({ navigation, route }) => {
             isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble
           ]}>
             {item.image && (
-              <SafeImage
-                source={item.image}
-                style={styles.messageImage}
-              />
+              <TouchableOpacity onPress={() => openImageViewer(item.image)}>
+                <SafeImage
+                  source={item.image}
+                  style={styles.messageImage}
+                />
+              </TouchableOpacity>
             )}
             {item.text && (
               <Text style={[
@@ -651,16 +650,21 @@ const ChatRoom = ({ navigation, route }) => {
               </Text>
             )}
           </View>
-          <Text style={[
-            styles.messageTimeOutside,
-            isMyMessage ? styles.myMessageTimeOutside : styles.otherMessageTimeOutside
-          ]}>
-            {new Date(item.createdAt).toLocaleTimeString('en-US', {
-              hour: 'numeric',
-              minute: '2-digit',
-              hour12: true
-            })}
-          </Text>
+          <View style={styles.messageTimeContainer}>
+            <Text style={[
+              styles.messageTimeOutside,
+              isMyMessage ? styles.myMessageTimeOutside : styles.otherMessageTimeOutside
+            ]}>
+              {new Date(item.createdAt).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              })}
+            </Text>
+            {isMyMessage && item.seen && (
+              <Text style={styles.seenText}> · {t('chatroom.seen')}</Text>
+            )}
+          </View>
         </View>
         {isMyMessage && currentUser.avatar && (
           <SafeImage
@@ -670,6 +674,94 @@ const ChatRoom = ({ navigation, route }) => {
         )}
       </View>
     );
+  };
+
+  const openImageViewer = (imageUrl) => {
+    setSelectedImage(imageUrl);
+    setImageViewerVisible(true);
+  };
+
+  const closeImageViewer = () => {
+    setImageViewerVisible(false);
+    setSelectedImage(null);
+  };
+
+  const downloadImage = async () => {
+    if (!selectedImage) return;
+
+    try {
+      const timestamp = new Date().getTime();
+      const fileName = `image_${timestamp}.jpg`;
+      
+      if (Platform.OS === 'android') {
+        if (Platform.Version >= 33) {
+          const downloadPath = `${ReactNativeBlobUtil.fs.dirs.DownloadDir}/${fileName}`;
+          
+          ReactNativeBlobUtil.config({
+            fileCache: true,
+            path: downloadPath,
+            addAndroidDownloads: {
+              useDownloadManager: true,
+              notification: true,
+              path: downloadPath,
+              description: 'Downloading image',
+              mediaScannable: true,
+            },
+          })
+            .fetch('GET', selectedImage)
+            .then(() => {
+              Alert.alert(t('chatroom.success') || 'Success', t('chatroom.image_downloaded') || 'Image downloaded successfully');
+            })
+            .catch(() => {
+              Alert.alert(t('auth.otp.error'), t('chatroom.download_failed') || 'Failed to download image');
+            });
+        } else {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
+          );
+          if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+            Alert.alert(t('auth.otp.error'), 'Storage permission denied');
+            return;
+          }
+
+          const downloadPath = `${ReactNativeBlobUtil.fs.dirs.DownloadDir}/${fileName}`;
+          
+          ReactNativeBlobUtil.config({
+            fileCache: true,
+            path: downloadPath,
+            addAndroidDownloads: {
+              useDownloadManager: true,
+              notification: true,
+              path: downloadPath,
+              description: 'Downloading image',
+            },
+          })
+            .fetch('GET', selectedImage)
+            .then(() => {
+              Alert.alert(t('chatroom.success') || 'Success', t('chatroom.image_downloaded') || 'Image downloaded successfully');
+            })
+            .catch(() => {
+              Alert.alert(t('auth.otp.error'), t('chatroom.download_failed') || 'Failed to download image');
+            });
+        }
+      } else {
+        const downloadPath = `${ReactNativeBlobUtil.fs.dirs.DocumentDir}/${fileName}`;
+        
+        ReactNativeBlobUtil.config({
+          fileCache: true,
+          path: downloadPath,
+        })
+          .fetch('GET', selectedImage)
+          .then(() => {
+            Alert.alert(t('chatroom.success') || 'Success', t('chatroom.image_downloaded') || 'Image downloaded successfully');
+          })
+          .catch(() => {
+            Alert.alert(t('auth.otp.error'), t('chatroom.download_failed') || 'Failed to download image');
+          });
+      }
+    } catch (error) {
+      Alert.alert(t('auth.otp.error'), t('chatroom.download_failed') || 'Failed to download image');
+    }
   };
 
   const renderInputToolbar = () => (
@@ -790,6 +882,31 @@ const ChatRoom = ({ navigation, route }) => {
 
 
           {renderInputToolbar()}
+
+          <Modal
+            visible={imageViewerVisible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={closeImageViewer}
+          >
+            <View style={styles.imageViewerContainer}>
+              <LinearGradient colors={['#000000', '#000000']} style={styles.imageViewerGradient}>
+                <View style={styles.imageViewerHeader}>
+                  <TouchableOpacity onPress={closeImageViewer} style={styles.closeButton}>
+                    <X size={28} color="#FFFFFF" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={downloadImage} style={styles.downloadButton}>
+                    <Download size={24} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
+                <Image
+                  source={{ uri: selectedImage }}
+                  style={styles.fullScreenImage}
+                  resizeMode="contain"
+                />
+              </LinearGradient>
+            </View>
+          </Modal>
         </LinearGradient>
       </KeyboardAvoidingView>
     </ChatErrorBoundary>
@@ -935,6 +1052,16 @@ const styles = StyleSheet.create({
   otherMessageTimeOutside: {
     textAlign: 'left',
   },
+  messageTimeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  seenText: {
+    fontSize: 11,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
   messageTime: {
     fontSize: 11,
     marginTop: 5,
@@ -1025,6 +1152,40 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  imageViewerContainer: {
+    flex: 1,
+  },
+  imageViewerGradient: {
+    flex: 1,
+  },
+  imageViewerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+    paddingBottom: 20,
+  },
+  closeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  downloadButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,59,109,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    flex: 1,
+    width: '100%',
   },
 });
 

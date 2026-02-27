@@ -12,6 +12,7 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiService from '../../services/apiService';
@@ -38,6 +39,7 @@ const SignUp = ({ navigation }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [selectedCountry, setSelectedCountry] = useState(null);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   console.log(insets.top)
   const getPhoneLength = (country) => {
@@ -137,7 +139,7 @@ const SignUp = ({ navigation }) => {
   }
 
   const handleContinueWithEmail = () => {
-    console.log('Continue with email');
+    setShowPremiumModal(true);
   };
 
   const handlePhoneSubmit = async () => {
@@ -416,6 +418,7 @@ const SignUp = ({ navigation }) => {
             onChangeSelectedCountry={handleSelectedCountry}
             returnKeyType="go"
             onSubmitEditing={handlePhoneSubmit}
+            placeholder={t('auth.signup.phone_placeholder')}
           />
         </View>
 
@@ -442,6 +445,37 @@ const SignUp = ({ navigation }) => {
           </View>
         )}
       </ScrollView>
+
+      {/* Premium Feature Modal */}
+      <Modal
+        visible={showPremiumModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPremiumModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalIconContainer}>
+                <Text style={styles.premiumIcon}>👑</Text>
+              </View>
+
+              <Text style={styles.modalTitle}>{t('settings.premium_feature')}</Text>
+
+              <Text style={styles.modalMessage}>
+                {t('settings.premium_message')}
+              </Text>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.premiumOkButton}
+                  onPress={() => setShowPremiumModal(false)}>
+                  <Text style={styles.premiumOkButtonText}>{t('settings.ok')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -592,6 +626,74 @@ const styles = StyleSheet.create({
   loadingContainer: {
     marginTop: 20,
     alignItems: 'center',
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modalContainer: {
+    width: '100%',
+    maxWidth: 320,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#FFF3E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  premiumIcon: {
+    fontSize: 32,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 30,
+  },
+  modalButtons: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  premiumOkButton: {
+    backgroundColor: '#F23576',
+    paddingVertical: 12,
+    paddingHorizontal: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  premiumOkButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

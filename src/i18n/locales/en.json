@@ -47,7 +47,7 @@
       "failed_send_otp": "Failed to send OTP. Please try again.",
       "failed_verify_otp": "Failed to verify OTP. Please try again.",
       "invalid_phone": "Invalid Phone",
-      "invalid_phone_message": "Please enter a valid {length}-digit phone number"
+      "invalid_phone_message": "Please enter a valid {{length}}-digit phone number"
     }
   },
   "uploaddocuments": {
@@ -304,7 +304,16 @@
     "start_conversation": "Start your conversation with",
     "say_hello": "Say hello! 👋",
     "user": "User",
-    "failed_send_image": "Failed to send image. Please check your connection."
+    "failed_send_image": "Failed to send image. Please check your connection.",
+    "success": "Success",
+    "image_downloaded": "Image downloaded successfully",
+    "download_failed": "Failed to download image",
+    "seen": "Seen"
+  },
+  "camera": {
+    "choose_photo": "Choose your photo",
+    "take_picture": "Take a Picture",
+    "choose_gallery": "Choose from gallery"
   },
   "matchscreen": {
     "congratulations": "Congratulations",
@@ -388,5 +397,26 @@
     "photo_upload_success": "Photo uploaded successfully",
     "profile_updated": "Profile Updated!",
     "profile_updated_message": "Your profile has been updated successfully."
+  },
+  "admin": {
+    "user_management": "User Management",
+    "archive": "Archive",
+    "archived_users": "Archived Users",
+    "no_users_found": "No users found",
+    "no_archived_users": "No archived users",
+    "delete_user": "Delete User",
+    "delete_user_message": "Are you sure you want to delete {name}? This will move them to archive.",
+    "restore_user": "Restore User",
+    "restore_user_message": "Restore {name}?",
+    "permanent_delete": "Permanent Delete",
+    "permanent_delete_message": "This will permanently delete {name}. This action cannot be undone!",
+    "logout": "Logout",
+    "logout_message": "Are you sure you want to logout from admin panel?",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "restore": "Restore",
+    "delete_forever": "Delete Forever",
+    "deleted": "Deleted",
+    "incomplete": "Incomplete"
   }
 }

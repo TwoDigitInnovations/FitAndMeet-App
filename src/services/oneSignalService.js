@@ -1,5 +1,6 @@
 import { OneSignal } from 'react-native-onesignal';
 import apiService from './apiService';
+import { navigationRef } from '../utils/navigationRef';
 
 const ONESIGNAL_APP_ID = '73c1715b-12f7-4e02-bf85-7e1c77307f2c';
 
@@ -13,6 +14,21 @@ export const initializeOneSignal = () => {
   });
 
   OneSignal.Notifications.addEventListener('click', (event) => {
+    const notification = event.notification;
+    const data = notification.additionalData;
+
+    if (data && data.type === 'message') {
+      const { conversationId, senderId, senderName, senderImage } = data;
+      
+      if (navigationRef.isReady() && conversationId && senderId) {
+        navigationRef.navigate('ChatRoom', {
+          userId: senderId,
+          userName: senderName || 'User',
+          userImage: senderImage || null,
+          conversationId: conversationId
+        });
+      }
+    }
   });
 };
 

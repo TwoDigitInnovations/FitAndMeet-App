@@ -207,7 +207,6 @@ const SignIn = ({ navigation }) => {
       console.log('Requires Registration:', response.requiresRegistration);
 
       if (response.success) {
-        // Store token using proper storage utility
         const tokenSaved = await setAuthToken(response.token);
 
         if (!tokenSaved) {
@@ -215,22 +214,27 @@ const SignIn = ({ navigation }) => {
           return;
         }
 
-        // Verify token was saved
         const savedToken = await getAuthToken();
         console.log('Token saved successfully:', savedToken ? 'Yes' : 'No');
 
         await updatePlayerIdOnBackend();
 
+        if (response.isAdmin) {
+          console.log('Admin user detected - navigating to UserManagement');
+          if (handleLoginSuccess) {
+            handleLoginSuccess(response.user);
+          }
+          setTimeout(() => {
+          }, 100);
+          return;
+        }
+
         if (response.user.profileCompleted) {
-          // Profile is complete, set authentication state
           if (handleLoginSuccess) {
             handleLoginSuccess(response.user);
           }
 
-          // Small delay to ensure state is updated, then navigate
           setTimeout(() => {
-            // Navigation will happen automatically when isAuthenticated changes
-            // The AppNavigate will check profileCompleted flag and go to TabNav
           }, 100);
         } else {
 
@@ -424,11 +428,13 @@ const SignIn = ({ navigation }) => {
         resizeMode="cover"
       />
 
-      {/* <Image
-        source={require('../../Assets/images/shadow.png')}
-        style={styles.shadowImage}
-        resizeMode="stretch"
-      /> */}
+      <TouchableOpacity style={styles.backButtonAbsolute} onPress={handleBack}>
+        <Image
+          source={require('../../Assets/images/back.png')}
+          style={styles.backIcon}
+          resizeMode="contain"
+        />
+      </TouchableOpacity>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -489,6 +495,7 @@ const SignIn = ({ navigation }) => {
                   onChangeSelectedCountry={handleSelectedCountry}
                   returnKeyType="go"
                   onSubmitEditing={handlePhoneSubmit}
+                  placeholder={t('auth.signin.phone_placeholder')}
                 />
               </View>
 
@@ -508,6 +515,12 @@ const SignIn = ({ navigation }) => {
                   {t('auth.signin.signup_link')} <Text style={styles.signUpLinkBold}>{t('auth.signin.signup_link_bold')}</Text>
                 </Text>
               </TouchableOpacity>
+
+              {/* <TouchableOpacity 
+                style={styles.adminButton}
+                onPress={() => navigation.navigate('AdminLogin')}>
+                <Text style={styles.adminButtonText}>Admin Login</Text>
+              </TouchableOpacity> */}
             </View>
           </ScrollView>
         </TouchableWithoutFeedback>
@@ -579,6 +592,15 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     top: 20,
+    left: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  backButtonAbsolute: {
+    position: 'absolute',
+    top: 30,
     left: 20,
     width: 40,
     height: 40,
@@ -725,6 +747,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#E65100',
     fontWeight: '600',
+    textAlign: 'center',
+  },
+  adminButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+  },
+  adminButtonText: {
+    fontSize: 12,
+    color: '#A0A0A0',
     textAlign: 'center',
   },
 });

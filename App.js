@@ -58,9 +58,13 @@ function App() {
     initializeApp();
   }, [])
 
-
   useEffect(() => {
-
+    if (isAuthenticated) {
+      const { updatePlayerIdOnBackend } = require('./src/services/oneSignalService');
+      updatePlayerIdOnBackend().catch(err => 
+        console.log('Failed to update player ID:', err)
+      );
+    }
   }, [isAuthenticated]);
 
   const handleLoginSuccess = (userData) => {

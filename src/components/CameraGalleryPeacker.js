@@ -1,4 +1,3 @@
-
 import {
   View,
   Text,
@@ -9,12 +8,13 @@ import {
 } from 'react-native';
 import React from 'react';
 import { check, PERMISSIONS, RESULTS, request } from 'react-native-permissions';
-// import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import Constants from '../utils/Constant';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import { useTranslation } from 'react-i18next';
 
 const CameraGalleryPicker = (props) => {
   const [visible, setVisible] = React.useState(false);
+  const { t } = useTranslation();
 
   React.useImperativeHandle(props.refs, () => ({
     show: () => setVisible(true),
@@ -131,7 +131,7 @@ const CameraGalleryPicker = (props) => {
                   fontWeight: '700',
                   marginBottom: 20,
                 }}>
-                Choose your photo
+                {t('camera.choose_photo')}
               </Text>
             </View>
 
@@ -149,7 +149,7 @@ const CameraGalleryPicker = (props) => {
                     fontWeight: '500',
                     opacity: 0.7,
                   }}>
-                  Take a Picture
+                  {t('camera.take_picture')}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -170,7 +170,7 @@ const CameraGalleryPicker = (props) => {
                       fontWeight: '500',
                       opacity: 0.7,
                     }}>
-                    Choose from gallery
+                    {t('camera.choose_gallery')}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -196,7 +196,7 @@ const CameraGalleryPicker = (props) => {
                     textAlign: 'right',
                     marginRight: 20,
                   }}>
-                  CANCEL
+                  {t('firstname.cancel').toUpperCase()}
                 </Text>
               </View>
             </TouchableOpacity>

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { changeLanguage } from '../i18n';
+import apiService from '../services/apiService';
 
 const LanguageContext = createContext();
 
@@ -25,7 +26,6 @@ export const LanguageProvider = ({ children }) => {
           setCurrentLanguage(savedLanguage);
           await i18n.changeLanguage(savedLanguage);
         } else {
-          // Set default to French if no saved language
           setCurrentLanguage('fr');
           await i18n.changeLanguage('fr');
         }
@@ -39,8 +39,16 @@ export const LanguageProvider = ({ children }) => {
 
   const switchLanguage = async (languageCode) => {
     try {
-      setCurrentLanguage(languageCode); // Update state first for immediate UI update
+      setCurrentLanguage(languageCode);
       await changeLanguage(languageCode);
+      
+      try {
+        await apiService.Put('api/auth/update-language', { 
+          preferredLanguage: languageCode 
+        });
+      } catch (apiError) {
+        console.error('Error updating language on backend:', apiError);
+      }
     } catch (error) {
       console.error('Error switching language:', error);
     }

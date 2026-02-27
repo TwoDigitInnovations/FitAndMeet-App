@@ -43,13 +43,12 @@ const EditProfile = ({ navigation }) => {
   const [gender, setGender] = useState('');
   const [interestedIn, setInterestedIn] = useState('');
   const [lookingFor, setLookingFor] = useState('');
-  const [ageRange, setAgeRange] = useState('');
+  const [ageRange, setAgeRange] = useState([]);
   const [interests, setInterests] = useState([]);
   const [bio, setBio] = useState('');
   const [photos, setPhotos] = useState([]);
   const [gymName, setGymName] = useState('');
 
-  // Modal states
   const [showGenderModal, setShowGenderModal] = useState(false);
   const [showInterestedModal, setShowInterestedModal] = useState(false);
   const [showLookingForModal, setShowLookingForModal] = useState(false);
@@ -83,7 +82,7 @@ const EditProfile = ({ navigation }) => {
         setGender(user.gender || '');
         setInterestedIn(user.interestedIn || '');
         setLookingFor(user.lookingFor || '');
-        setAgeRange(user.ageRange || '');
+        setAgeRange(user.ageRange || []);
         setInterests(user.interests || []);
         setBio(user.bio || '');
         setPhotos(user.photos || []);
@@ -172,6 +171,14 @@ const EditProfile = ({ navigation }) => {
       setInterests(interests.filter(i => i !== interest));
     } else {
       setInterests([...interests, interest]);
+    }
+  };
+
+  const toggleAgeRange = (range) => {
+    if (ageRange.includes(range)) {
+      setAgeRange(ageRange.filter(item => item !== range));
+    } else {
+      setAgeRange([...ageRange, range]);
     }
   };
 
@@ -634,7 +641,6 @@ const EditProfile = ({ navigation }) => {
         </View>
       </Modal>
 
-      {/* Age Range Modal */}
       <Modal
         visible={showAgeRangeModal}
         transparent
@@ -653,15 +659,12 @@ const EditProfile = ({ navigation }) => {
                 key={option.key}
                 style={[
                   styles.modalOption,
-                  ageRange === option.key && styles.modalOptionSelected
+                  ageRange.includes(option.key) && styles.modalOptionSelected
                 ]}
-                onPress={() => {
-                  setAgeRange(option.key);
-                  setShowAgeRangeModal(false);
-                }}>
+                onPress={() => toggleAgeRange(option.key)}>
                 <Text style={[
                   styles.modalOptionText,
-                  ageRange === option.key && styles.modalOptionTextSelected
+                  ageRange.includes(option.key) && styles.modalOptionTextSelected
                 ]}>
                   {option.label}
                 </Text>

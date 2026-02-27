@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SignIn from '../screens/auth/SignIn'
@@ -21,7 +21,11 @@ import ChatRoom from '../screens/app/ChatRoom';
 import TermsAndConditions from '../screens/TermsAndConditions';
 import Notifications from '../screens/app/Notifications';
 import EditProfile from '../screens/app/EditProfile';
+import UserManagement from '../screens/app/UserManagement';
+import ArchivedUsers from '../screens/app/ArchivedUsers';
+import AdminLogin from '../screens/auth/AdminLogin';
 import { UserContext } from '../../App';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
@@ -33,6 +37,7 @@ const AuthNavigate = () => {
             <AuthStack.Screen name="Welcome" component={WelcomeScreen} />
             <AuthStack.Screen name="SignIn" component={SignIn} />
             <AuthStack.Screen name="SignUp" component={SignUp} />
+            <AuthStack.Screen name="AdminLogin" component={AdminLogin} />
             <AuthStack.Screen name="SelectGym" component={SelectGym} />
             <AuthStack.Screen name="TermsScreen" component={TermsScreen} />
             <AuthStack.Screen name="UploadDocuments" component={UploadDocuments} />
@@ -47,14 +52,13 @@ const AuthNavigate = () => {
 const AppNavigate = () => {
     const [user] = useContext(UserContext);
 
-    // Determine route based on profile completion
     const getRequiredRoute = () => {
         if (!user) return 'TabNav';
 
-        // If profileCompleted flag is set, go to TabNav
+        if (user.isAdmin) return 'UserManagement';
+
         if (user.profileCompleted) return 'TabNav';
 
-        // Check profile completion step by step
         if (!user.gymName) return 'SelectGym';
         if (!user.termsAccepted) return 'TermsScreen';
         if (!user.idDocument || !user.gymMembershipDocument) return 'UploadDocuments';
@@ -64,7 +68,6 @@ const AppNavigate = () => {
         if (!user.bio) return 'FirstName';
         if (!user.photos || user.photos.length === 0) return 'FirstName';
 
-        // Profile is complete
         return 'TabNav';
     };
 
@@ -86,13 +89,41 @@ const AppNavigate = () => {
             <AppStack.Screen name="ChatRoom" component={ChatRoom} />
             <AppStack.Screen name="Notifications" component={Notifications} />
             <AppStack.Screen name="EditProfile" component={EditProfile} />
+            <AppStack.Screen name="UserManagement" component={UserManagement} />
+            <AppStack.Screen name="ArchivedUsers" component={ArchivedUsers} />
         </AppStack.Navigator>
     );
 };
 
 export default function Navigation({ isAuthenticated = false }) {
+    const [isFirstLaunch, setIsFirstLaunch] = useState(null);
+
+    useEffect(() => {
+        const checkFirstLaunch = async () => {
+            try {
+                const hasLaunched = await AsyncStorage.getItem('hasLaunched');
+                if (hasLaunched === null) {
+                    setIsFirstLaunch(true);
+                    await AsyncStorage.setItem('hasLaunched', 'true');
+                } else {
+                    setIsFirstLaunch(false);
+                }
+            } catch (error) {
+                console.error('Error checking first launch:', error);
+                setIsFirstLaunch(false);
+            }
+        };
+
+        checkFirstLaunch();
+    }, []);
+
     // Add a key to force remount when authentication changes
     const navigationKey = isAuthenticated ? 'authenticated' : 'unauthenticated';
+
+    // Show nothing while checking first launch
+    if (isFirstLaunch === null) {
+        return null;
+    }
 
     if (isAuthenticated) {
         return (
@@ -110,7 +141,7 @@ export default function Navigation({ isAuthenticated = false }) {
             <NavigationContainer ref={navigationRef} key={navigationKey}>
                 <Stack.Navigator
                     screenOptions={{ headerShown: false }}
-                    initialRouteName="Auth"
+                    initialRouteName={isFirstLaunch ? "Onboarding" : "Auth"}
                 >
                     <Stack.Screen name="Splash" component={SplashScreen} />
                     <Stack.Screen name="Onboarding" component={OnboardingScreen} />
