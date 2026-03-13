@@ -27,6 +27,20 @@ const Notifications = ({navigation}) => {
   const [refreshing, setRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Translate notification messages
+  const translateNotificationMessage = (message, senderName) => {
+    // Check for "liked your profile" pattern
+    if (message.includes('liked your profile')) {
+      return t('notifications.liked_your_profile', { name: senderName });
+    }
+    // Check for "matched with" pattern
+    if (message.includes('matched with') || message.includes('You matched with')) {
+      return t('notifications.matched_with', { name: senderName });
+    }
+    // Return original message if no pattern matches
+    return message;
+  };
+
   useEffect(() => {
     fetchNotifications();
     
@@ -152,7 +166,7 @@ const Notifications = ({navigation}) => {
           <View style={styles.notificationText}>
             <Text style={styles.senderName}>{item.sender.name}</Text>
             <Text style={styles.message} numberOfLines={2}>
-              {item.message}
+              {translateNotificationMessage(item.message, item.sender.name)}
             </Text>
           </View>
 

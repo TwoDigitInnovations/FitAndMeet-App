@@ -9,6 +9,7 @@ import {
   StatusBar,
   Dimensions,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
@@ -20,9 +21,39 @@ const ProfileDetails = ({ navigation, route }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showImageViewer, setShowImageViewer] = useState(false);
   const { t } = useTranslation();
 
   const passedProfile = route?.params?.profile;
+
+  // Translation mapping for interests and other fields
+  const translateInterest = (interest) => {
+    const interestMap = {
+      'Creativity': t('firstname.interests.creativity'),
+      'Sports': t('firstname.interests.sports'),
+      'Gym': t('firstname.interests.gym'),
+      'Movies': t('firstname.interests.movies'),
+      'Gaming': t('firstname.interests.gaming'),
+      'Going out': t('firstname.interests.going_out'),
+      'Music': t('firstname.interests.music'),
+      'Food & Drink': t('firstname.interests.food_drink'),
+      'Staying in': t('firstname.interests.staying_in'),
+      'Concert': t('firstname.interests.concert'),
+      'Dance': t('firstname.interests.dance'),
+      'Festival': t('firstname.interests.festival'),
+      'Adventure & outdoors': t('firstname.interests.adventure_outdoors'),
+    };
+    return interestMap[interest] || interest;
+  };
+
+  const translateLookingFor = (lookingFor) => {
+    const lookingForMap = {
+      'Long-term Partner': t('editprofile.long_term_partner'),
+      'Work out Partner': t('editprofile.workout_partner'),
+      'Looking for Both': t('editprofile.looking_for_both'),
+    };
+    return lookingForMap[lookingFor] || lookingFor;
+  };
 
   useEffect(() => {
     if (passedProfile?.id) {
@@ -80,8 +111,12 @@ const ProfileDetails = ({ navigation, route }) => {
       clientsTrained: profile?.clientsTrained || t('profiledetails.clients_count'),
       location: profile?.gym || profile?.gymName || profile?.distance || t('profiledetails.default_gym'),
       about: profile?.bio || t('profiledetails.default_about'),
-      lookingFor: profile?.lookingFor || t('profiledetails.default_looking_for'),
-      interests: profile?.interests || profile?.activities || [t('profiledetails.default_interests.gym'), t('profiledetails.default_interests.sports'), t('profiledetails.default_interests.dance'), t('profiledetails.default_interests.adventure')],
+      lookingFor: translateLookingFor(profile?.lookingFor) || t('profiledetails.default_looking_for'),
+      interests: profile?.interests 
+        ? profile.interests.map(interest => translateInterest(interest))
+        : profile?.activities 
+          ? profile.activities.map(activity => translateInterest(activity))
+          : [t('profiledetails.default_interests.gym'), t('profiledetails.default_interests.sports'), t('profiledetails.default_interests.dance'), t('profiledetails.default_interests.adventure')],
       specializations: [t('profiledetails.personal_training'), t('profiledetails.functional_training'), t('profiledetails.cardio_fitness')],
       gender: profile?.gender || t('profiledetails.default_gender')
     };
@@ -169,8 +204,6 @@ const ProfileDetails = ({ navigation, route }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-
-
       <View style={styles.imageContainer}>
         <TouchableOpacity
           style={styles.imageTouch}
@@ -182,6 +215,15 @@ const ProfileDetails = ({ navigation, route }) => {
             style={styles.profileImage}
             resizeMode="cover"
           />
+        </TouchableOpacity>
+        
+        {/* View Full Photo button positioned inside image container */}
+        <TouchableOpacity
+          style={styles.viewFullPhotoButton}
+          onPress={() => setShowImageViewer(true)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.viewFullPhotoText}>{t('profiledetails.view_full_photo')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -197,7 +239,6 @@ const ProfileDetails = ({ navigation, route }) => {
           style={styles.backIcon}
         />
       </TouchableOpacity>
-
 
       <LinearGradient
         colors={['#571D38', '#31132A', '#0A0B1B', '#000000']}
@@ -221,7 +262,6 @@ const ProfileDetails = ({ navigation, route }) => {
               )}
             </View>
           </View>
-
 
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
@@ -258,18 +298,15 @@ const ProfileDetails = ({ navigation, route }) => {
             </View>
           </View>
 
-
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('profiledetails.about')}</Text>
             <Text style={styles.aboutText}>{profileData.about}</Text>
           </View>
 
-
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('profiledetails.looking_for')}</Text>
             <Text style={styles.lookingForText}>{profileData.lookingFor}</Text>
           </View>
-
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('profiledetails.interests')}</Text>
@@ -302,7 +339,6 @@ const ProfileDetails = ({ navigation, route }) => {
               })}
             </View>
           </View>
-
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('profiledetails.specializations')}</Text>
@@ -337,8 +373,6 @@ const ProfileDetails = ({ navigation, route }) => {
           <View style={styles.bottomSpacing} />
         </ScrollView>
 
-
-        {/* <View style={styles.buttonContainer}> */}
         <TouchableOpacity
           style={styles.chatButton}
           onPress={() => {
@@ -362,8 +396,35 @@ const ProfileDetails = ({ navigation, route }) => {
             <Text style={styles.chatButtonText}>{t('profiledetails.start_chatting')}</Text>
           </LinearGradient>
         </TouchableOpacity>
-        {/* </View> */}
       </LinearGradient>
+
+      <Modal
+        visible={showImageViewer}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowImageViewer(false)}
+      >
+        <View style={styles.imageViewerOverlay}>
+          <TouchableOpacity 
+            style={styles.closeButton}
+            onPress={() => setShowImageViewer(false)}
+          >
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.imageViewerContainer}
+            activeOpacity={1}
+            onPress={() => setShowImageViewer(false)}
+          >
+            <Image
+              source={{ uri: profileData?.images[currentImageIndex] }}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -393,11 +454,49 @@ const styles = StyleSheet.create({
   imageContainer: {
     height: height * 0.55,
     position: 'relative',
-    overflow: 'hidden',
+    overflow: 'visible', // Wapas hidden kar diya
   },
   imageTouch: {
     width: '100%',
     height: '100%',
+  },
+  viewFullPhotoButton: {
+    position: 'absolute',
+    bottom: 160, 
+    left: 20,
+    backgroundColor: 'transparent',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    alignItems: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'white',
+    alignSelf: 'flex-start',
+    zIndex: 50, 
+  },
+  viewFullPhotoText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600', 
+  },
+  fullScreenButton: {
+    position: 'absolute',
+    top: height * 0.55 - 80,
+    right: 20,
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 20,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  fullScreenIcon: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: 'bold',
   },
   profileImage: {
     width: '100%',
@@ -405,12 +504,10 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
     position: 'absolute',
     top: 0,
-    //  borderTopLeftRadius: 125,
-    // borderTopRightRadius: 125,
   },
   dotsContainer: {
     position: 'absolute',
-    top: height * 0.55 - 180, // Moved higher up from -150 to -180
+    top: height * 0.55 - 180,
     left: 0,
     right: 0,
     flexDirection: 'row',
@@ -426,13 +523,12 @@ const styles = StyleSheet.create({
   },
   activeDot: {
     backgroundColor: '#5C1F3AB0',
-    borderRadius: 2, // Square corners for active dot
-    width: 12, // Slightly wider for active dot
+    borderRadius: 2,
+    width: 12,
   },
   contentContainer: {
     flex: 1,
     marginTop: -150,
-
     paddingTop: 20,
   },
   scrollView: {
@@ -481,7 +577,6 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     marginRight: 8,
-
   },
   locationTextContainer: {
     flex: 1,
@@ -537,7 +632,6 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     marginRight: 6,
-
   },
   interestText: {
     fontSize: 14,
@@ -584,10 +678,8 @@ const styles = StyleSheet.create({
     bottom: 50,
     left: 20,
     right: 20,
-
   },
   chatButtonGradient: {
-    // paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
     height: 45
@@ -620,6 +712,35 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     marginBottom: 20,
+  },
+  imageViewerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+  },
+  imageViewerContainer: {
+    flex: 1,
+    width: '100%',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: '300',
   },
 });
 

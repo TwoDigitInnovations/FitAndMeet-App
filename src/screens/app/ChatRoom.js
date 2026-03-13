@@ -35,7 +35,7 @@ const isSmallScreen = height < 300;
 const topPadding = isSmallScreen ? 35 : 50;
 
 const ChatRoom = ({ navigation, route }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { userId, userName, userImage } = route.params || {};
 
   if (!userId) {
@@ -78,14 +78,6 @@ const ChatRoom = ({ navigation, route }) => {
 
 
   useEffect(() => {
-    if (conversationId && currentUser && socketRef.current) {
-      if (socketRef.current.connected) {
-        socketRef.current.emit('join-conversation', conversationId);
-      }
-    }
-  }, [conversationId, currentUser]);
-
-  useEffect(() => {
     if (conversationId && currentUser) {
       setupSocketConnection();
     }
@@ -98,6 +90,13 @@ const ChatRoom = ({ navigation, route }) => {
     };
   }, [conversationId, currentUser]);
 
+  useEffect(() => {
+    // Join conversation room when both conversationId and socket are ready
+    if (conversationId && socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('join-conversation', conversationId);
+    }
+  }, [conversationId, socketRef.current?.connected]);
+
   const initializeChat = async () => {
     try {
       setLoading(true);
@@ -108,9 +107,7 @@ const ChatRoom = ({ navigation, route }) => {
         return;
       }
 
-
       let userInfo = await getCurrentUserInfo();
-
 
       if (!userInfo.avatar) {
         try {
@@ -123,13 +120,11 @@ const ChatRoom = ({ navigation, route }) => {
             };
           }
         } catch (error) {
-
+          // Silent error handling
         }
       }
 
       setCurrentUser(userInfo);
-
-
       await loadMessagesFromBackend();
     } catch (error) {
       console.error('Error initializing chat:', error);
@@ -142,7 +137,13 @@ const ChatRoom = ({ navigation, route }) => {
   const setupSocketConnection = async () => {
     try {
       const token = await getAuthToken();
-      if (!token || socketRef.current) return;
+      if (!token) return;
+
+      // Disconnect existing socket if any
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
 
       let socketURL = chatApiService.baseURL;
       socketURL = socketURL.replace(/\/$/, '');
@@ -156,16 +157,16 @@ const ChatRoom = ({ navigation, route }) => {
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionAttempts: 5,
-        timeout: 10000
+        timeout: 10000,
+        forceNew: true // Force new connection
       });
 
       socketRef.current.on('connect', () => {
         console.log('Socket connected successfully');
+        
+        // Join conversation room immediately if conversationId exists
         if (conversationId) {
-          console.log('Joining conversation room:', conversationId);
           socketRef.current.emit('join-conversation', conversationId);
-        } else {
-          console.log('No conversationId yet, will join when available');
         }
       });
 
@@ -182,13 +183,6 @@ const ChatRoom = ({ navigation, route }) => {
       });
 
       socketRef.current.on('new-message', (message) => {
-        console.log('✅ Received new message via socket:', {
-          id: message._id,
-          content: message.content,
-          mediaUrl: message.mediaUrl,
-          sender: message.sender?.firstName
-        });
-        
         const formattedMessage = {
           _id: message._id || Math.round(Math.random() * 1000000),
           text: message.content || '',
@@ -201,13 +195,18 @@ const ChatRoom = ({ navigation, route }) => {
           image: message.mediaUrl && message.mediaUrl.startsWith('https://res.cloudinary.com/') 
             ? message.mediaUrl 
             : null,
-          type: message.type || 'text'
+          type: message.type || 'text',
+          seen: false
         };
 
         setMessages(prevMessages => {
+          // Check if message already exists
           const exists = prevMessages.some(m => m._id === formattedMessage._id);
-          if (exists) return prevMessages;
+          if (exists) {
+            return prevMessages;
+          }
           
+          // Replace temp message if exists
           const tempMessageIndex = prevMessages.findIndex(m => 
             m._id.toString().startsWith('temp_') && 
             m.user._id === formattedMessage.user._id &&
@@ -220,8 +219,19 @@ const ChatRoom = ({ navigation, route }) => {
             return newMessages;
           }
           
-          return [formattedMessage, ...prevMessages];
+          // Add new message at the beginning (since FlatList is inverted)
+          const newMessages = [formattedMessage, ...prevMessages];
+          return newMessages;
         });
+      });
+
+      socketRef.current.on('messages-read', (data) => {
+        setMessages(prevMessages => 
+          prevMessages.map(msg => ({
+            ...msg,
+            seen: true
+          }))
+        );
       });
 
     } catch (error) {
@@ -268,12 +278,15 @@ const ChatRoom = ({ navigation, route }) => {
                   avatar: msg.sender?.photos?.[0]?.url || null
                 },
                 image: imageUrl,
-                type: msg.type || 'text'
+                type: msg.type || 'text',
+                seen: msg.isRead || false
               };
             });
 
             console.log('Formatted messages with Cloudinary images:', formattedMessages.filter(m => m.image).length);
             setMessages(formattedMessages.reverse());
+
+            await chatApiService.put(`/api/chat/mark-read/${existingConversation.id}`);
           }
         }
       }
@@ -384,29 +397,45 @@ const ChatRoom = ({ navigation, route }) => {
             const response = await chatApiService.post('/api/chat/send-message', messageData);
 
           if (response.success) {
+            // Remove the temporary message and add the real one
+            setMessages(prevMessages => {
+              const filteredMessages = prevMessages.filter(msg => msg._id !== tempId);
+              
+              if (response.message) {
+                const updatedMessageFromBackend = {
+                  _id: response.message._id || newMessage._id,
+                  text: response.message.content || newMessage.text,
+                  createdAt: new Date(response.message.createdAt || newMessage.createdAt),
+                  user: {
+                    _id: response.message.sender?._id?.toString() || currentUser._id,
+                    name: response.message.sender?.firstName || currentUser.name,
+                    avatar: response.message.sender?.photos?.[0]?.url || currentUser.avatar
+                  },
+                  seen: false
+                };
 
-            if (response.message) {
-              const updatedMessageFromBackend = {
-                _id: response.message._id || newMessage._id,
-                text: response.message.content || newMessage.text,
-                createdAt: new Date(response.message.createdAt || newMessage.createdAt),
-                user: {
-                  _id: response.message.sender?._id?.toString() || currentUser._id,
-                  name: response.message.sender?.firstName || currentUser.name,
-                  avatar: response.message.sender?.photos?.[0]?.url || null
+                // Only add if not already exists (socket might have already added it)
+                const exists = filteredMessages.some(m => m._id === updatedMessageFromBackend._id);
+                if (!exists) {
+                  return [updatedMessageFromBackend, ...filteredMessages];
                 }
-              };
+              }
+              
+              return filteredMessages;
+            });
 
-
-              setMessages([updatedMessageFromBackend, ...messages]);
-            }
-
-
+            // Set conversation ID if new conversation
             if (!conversationId && response.message.conversation) {
               setConversationId(response.message.conversation);
             }
           } else {
             console.error('Failed to send message to backend:', response.message);
+            // Mark temp message as failed
+            setMessages(prevMessages => 
+              prevMessages.map(msg => 
+                msg._id === tempId ? { ...msg, failed: true, pending: false } : msg
+              )
+            );
           }
         }
       } catch (error) {
@@ -613,9 +642,13 @@ const ChatRoom = ({ navigation, route }) => {
     }
   };
 
-  const renderMessage = ({ item }) => {
+  const renderMessage = ({ item, index }) => {
     if (!currentUser) return null;
     const isMyMessage = item.user._id?.toString() === currentUser._id?.toString();
+    
+    const isLastSeenMessage = isMyMessage && item.seen && (
+      index === 0 || !messages[index - 1]?.seen || messages[index - 1]?.user._id?.toString() !== currentUser._id?.toString()
+    );
 
     return (
       <View style={[
@@ -655,13 +688,16 @@ const ChatRoom = ({ navigation, route }) => {
               styles.messageTimeOutside,
               isMyMessage ? styles.myMessageTimeOutside : styles.otherMessageTimeOutside
             ]}>
-              {new Date(item.createdAt).toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-              })}
+              {new Date(item.createdAt).toLocaleTimeString(
+                i18n.language === 'fr' ? 'fr-FR' : 'en-US',
+                {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: i18n.language !== 'fr'
+                }
+              )}
             </Text>
-            {isMyMessage && item.seen && (
+            {isLastSeenMessage && (
               <Text style={styles.seenText}> · {t('chatroom.seen')}</Text>
             )}
           </View>

@@ -10,7 +10,7 @@
                    "sign_in":  "Se connecter"
                },
     "welcome":  {
-                    "title":  "Bienvenue Fit \u0026 Meet",
+                    "title":  "Bienvenue sur Fit \u0026 Meet",
                     "subtitle":  "Trouvons votre partenaire parfait",
                     "terms_text":  "En continuant, vous acceptez les",
                     "terms_link":  "Termes et Conditions"
@@ -142,6 +142,7 @@
                            "interests":  "Intérêts",
                            "specializations":  "Spécialisations",
                            "start_chatting":  "Commencer à discuter",
+                           "view_full_photo":  "Voir la photo en entier",
                            "years_experience":  "5+ Années",
                            "clients_count":  "200+",
                            "personal_training":  "Entraînement personnel",
@@ -347,8 +348,10 @@
                           "matches_who_send_chat":  "Personnes qui vous ont aimé",
                           "loading":  "Chargement des notifications...",
                           "no_notifications":  "Pas encore de notifications",
-                          "no_notifications_desc":  "Lorsque quelqu\u0027un vous aime ou que vous obtenez un match, vous le verrez ici",
-                          "just_now":  "À l\u0027instant"
+                          "no_notifications_desc":  "Lorsque quelqu'un vous aime ou que vous obtenez un match, vous le verrez ici",
+                          "just_now":  "À l'instant",
+                          "liked_your_profile":  "{{name}} aime votre profil !",
+                          "matched_with":  "Vous avez matché avec {{name}} !"
                       },
     "editprofile":  {
                         "title":  "Modifier le profil",

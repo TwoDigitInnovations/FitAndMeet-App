@@ -40,6 +40,35 @@ const Home = ({ navigation }) => {
   const scrollViewRef = useRef(null);
   const insets = useSafeAreaInsets();
 
+  // Translation mapping for interests/activities
+  const translateActivity = (activity) => {
+    const activityMap = {
+      'Creativity': t('firstname.interests.creativity'),
+      'Sports': t('firstname.interests.sports'),
+      'Gym': t('firstname.interests.gym'),
+      'Movies': t('firstname.interests.movies'),
+      'Gaming': t('firstname.interests.gaming'),
+      'Going out': t('firstname.interests.going_out'),
+      'Music': t('firstname.interests.music'),
+      'Food & Drink': t('firstname.interests.food_drink'),
+      'Staying in': t('firstname.interests.staying_in'),
+      'Concert': t('firstname.interests.concert'),
+      'Dance': t('firstname.interests.dance'),
+      'Festival': t('firstname.interests.festival'),
+      'Adventure & outdoors': t('firstname.interests.adventure_outdoors'),
+    };
+    return activityMap[activity] || activity;
+  };
+
+  const translateGender = (gender) => {
+    const genderMap = {
+      'Man': t('editprofile.man'),
+      'Woman': t('editprofile.woman'),
+      'Other': t('editprofile.other'),
+    };
+    return genderMap[gender] || gender;
+  };
+
 
   useEffect(() => {
     fetchPotentialMatches();
@@ -337,7 +366,7 @@ const Home = ({ navigation }) => {
                 resizeMode="contain"
               />
               <Text style={styles.genderText}>
-                {profile.gender}
+                {translateGender(profile.gender)}
               </Text>
             </View>
             <View style={styles.gymRowHorizontal}>
@@ -348,7 +377,7 @@ const Home = ({ navigation }) => {
               />
               <Text style={styles.gymName}>
                 {profile.activities && profile.activities.length > 0
-                  ? profile.activities[0]
+                  ? translateActivity(profile.activities[0])
                   : t('home.fitness')}
               </Text>
             </View>
@@ -378,7 +407,7 @@ const Home = ({ navigation }) => {
                   style={styles.activityIcon}
                   resizeMode="contain"
                 />
-                <Text style={styles.activityText}>{profile.activities[1]}</Text>
+                <Text style={styles.activityText}>{translateActivity(profile.activities[1])}</Text>
               </View>
             )}
             {profile.activities && profile.activities.length > 2 && (
@@ -388,7 +417,7 @@ const Home = ({ navigation }) => {
                   style={styles.activityIcon}
                   resizeMode="contain"
                 />
-                <Text style={styles.activityText}>{profile.activities[2]}</Text>
+                <Text style={styles.activityText}>{translateActivity(profile.activities[2])}</Text>
               </View>
             )}
           </View>

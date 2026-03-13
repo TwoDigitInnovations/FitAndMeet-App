@@ -33,6 +33,7 @@ const Settings = ({ navigation }) => {
   const [loggingOut, setLoggingOut] = useState(false);
   const [testingNotification, setTestingNotification] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
   const insets = useSafeAreaInsets();
 
 
@@ -70,12 +71,12 @@ const Settings = ({ navigation }) => {
     try {
       const result = await sendTestNotification();
       if (result.success) {
-        Alert.alert('✅ Success', 'Test notification sent! Check your notification tray.');
+        Alert.alert('Success', 'Test notification sent! Check your notification tray.');
       } else {
-        Alert.alert('❌ Error', result.message || 'Failed to send test notification');
+        Alert.alert(' Error', result.message || 'Failed to send test notification');
       }
     } catch (error) {
-      Alert.alert('❌ Error', 'Failed to send test notification');
+      Alert.alert(' Error', 'Failed to send test notification');
     } finally {
       setTestingNotification(false);
     }
@@ -101,26 +102,24 @@ const Settings = ({ navigation }) => {
         console.log(" API logout failed, but continuing with local logout:", apiError);
       }
 
-      // Delete auth token
+     
       await deleteAuthToken();
-
-      // Use the logout function from AuthContext
       if (logout) {
         await logout();
       }
 
-      console.log("✅ Logout completed successfully");
+      console.log("Logout completed successfully");
     } catch (error) {
-      console.error('❌ Logout error:', error);
+      console.error(' Logout error:', error);
 
-      // Even if there's an error, try to logout locally
+     
       try {
         await deleteAuthToken();
         if (logout) {
           await logout();
         }
       } catch (localLogoutError) {
-        console.error('❌ Local logout also failed:', localLogoutError);
+        console.error(' Local logout also failed:', localLogoutError);
       }
     } finally {
       setLoggingOut(false);
@@ -197,12 +196,16 @@ const Settings = ({ navigation }) => {
         scrollEnabled={true}>
        
         <View style={styles.profileSection}>
-          <View style={styles.profileImageContainer}>
+          <TouchableOpacity 
+            style={styles.profileImageContainer}
+            onPress={() => setShowImageViewer(true)}
+            activeOpacity={0.8}
+          >
             <Image
               source={getProfileImageSource()}
               style={styles.profileImage}
             />
-          </View>
+          </TouchableOpacity>
           <View style={styles.nameContainer}>
             <Text style={styles.profileName}>{getDisplayName()}</Text>
             {profileData?.user?.isVerified && (
@@ -479,6 +482,35 @@ const Settings = ({ navigation }) => {
           </View >
         </View >
       </Modal >
+
+      {/* Full Screen Image Viewer */}
+      <Modal
+        visible={showImageViewer}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowImageViewer(false)}
+      >
+        <View style={styles.imageViewerOverlay}>
+          <TouchableOpacity 
+            style={styles.closeButton}
+            onPress={() => setShowImageViewer(false)}
+          >
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.imageViewerContainer}
+            activeOpacity={1}
+            onPress={() => setShowImageViewer(false)}
+          >
+            <Image
+              source={getProfileImageSource()}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </LinearGradient >
   );
 };
@@ -942,6 +974,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'white',
+  },
+  imageViewerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageViewerContainer: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: '300',
   },
 });
 

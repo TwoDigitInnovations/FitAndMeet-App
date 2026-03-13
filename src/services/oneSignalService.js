@@ -17,16 +17,22 @@ export const initializeOneSignal = () => {
     const notification = event.notification;
     const data = notification.additionalData;
 
-    if (data && data.type === 'message') {
-      const { conversationId, senderId, senderName, senderImage } = data;
-      
-      if (navigationRef.isReady() && conversationId && senderId) {
-        navigationRef.navigate('ChatRoom', {
-          userId: senderId,
-          userName: senderName || 'User',
-          userImage: senderImage || null,
-          conversationId: conversationId
-        });
+    if (data && navigationRef.isReady()) {
+      if (data.type === 'message') {
+        const { conversationId, senderId, senderName, senderImage } = data;
+        
+        if (conversationId && senderId) {
+          navigationRef.navigate('ChatRoom', {
+            userId: senderId,
+            userName: senderName || 'User',
+            userImage: senderImage || null,
+            conversationId: conversationId
+          });
+        }
+      } else if (data.type === 'like') {
+        navigationRef.navigate('Notifications');
+      } else if (data.type === 'match') {
+        navigationRef.navigate('MatchScreen');
       }
     }
   });

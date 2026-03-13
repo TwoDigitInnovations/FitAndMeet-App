@@ -14,12 +14,12 @@ const CustomeModal = (props) => {
     const [visible, setVisible] = useState(props.open);
 
     useEffect(() => {
-        console.log(props.open)
+        setVisible(props.open);
     }, [props.open])
 
     return (
         <Modal
-            visible={props.open}
+            visible={visible}
             transparent={true}
             animationType="slide"
             onRequestClose={() => {

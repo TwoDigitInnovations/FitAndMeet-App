@@ -34,7 +34,7 @@ const WelcomeScreen = ({ navigation }) => {
 
       />
 
-      {/* Language Selector */}
+     
       <View style={[styles.languageContainer, { top: Platform.OS === 'android' ? insets.top + 10 : 10 }]}>
         <LanguageSelector />
       </View>

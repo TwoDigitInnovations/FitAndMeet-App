@@ -142,6 +142,7 @@
     "interests": "Interests",
     "specializations": "Specializations",
     "start_chatting": "Start Chatting",
+    "view_full_photo": "View Full Photo",
     "years_experience": "5+ Years",
     "clients_count": "200+",
     "personal_training": "Personal Training",
@@ -352,7 +353,9 @@
     "loading": "Loading notifications...",
     "no_notifications": "No notifications yet",
     "no_notifications_desc": "When someone likes you or you get a match, you'll see it here",
-    "just_now": "Just now"
+    "just_now": "Just now",
+    "liked_your_profile": "{{name}} liked your profile!",
+    "matched_with": "You matched with {{name}}!"
   },
   "editprofile": {
     "title": "Edit Profile",

@@ -79,6 +79,16 @@ const EditProfile = ({ navigation }) => {
         // Populate form fields
         setFirstName(user.firstName || '');
         setBirthday(user.birthday || '');
+        
+        // Convert birthday string to Date object for picker
+        if (user.birthday) {
+          const parts = user.birthday.split('/');
+          if (parts.length === 3) {
+            const dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
+            setSelectedDate(dateObj);
+          }
+        }
+        
         setGender(user.gender || '');
         setInterestedIn(user.interestedIn || '');
         setLookingFor(user.lookingFor || '');
@@ -152,11 +162,12 @@ const EditProfile = ({ navigation }) => {
     return age;
   };
 
-  const handleDateConfirm = (date) => {
-    setSelectedDate(date);
-    const formattedDate = formatDate(date);
-    setBirthday(formattedDate);
-    // setDatePickerOpen(false);
+  const handleDateConfirm = (event, date) => {
+    if (date) {
+      setSelectedDate(date);
+      const formattedDate = formatDate(date);
+      setBirthday(formattedDate);
+    }
   };
 
   const formatDate = (date) => {
@@ -499,24 +510,53 @@ const EditProfile = ({ navigation }) => {
         maximumDate={new Date()}
       /> */}
 
-      <CustomeModal
-        confirmButtonColor='#FF3B6D'
-        confirmButtonName={t('firstname.confirm')}
-        cancelButtonName={t('firstname.cancel')}
-        title={t('firstname.select_birthday')}
-        titleColor='#FF3B6D'
-        onCancel={() => { console.log('Canceled'); setDatePickerOpen(false) }}
-        onConfirm={() => { console.log('Confirmed'); setDatePickerOpen(false) }}
-        open={datePickerOpen}
-      >
-        <RNDateTimePicker
-          value={selectedDate}
-          mode="date"
-          maximumDate={new Date()}
-          display='spinner'
-          onChange={handleDateConfirm}
-          title="Select your birthday" />
-      </CustomeModal>
+      {Platform.OS === 'ios' ? (
+        <CustomeModal
+          confirmButtonColor='#FF3B6D'
+          confirmButtonName={t('firstname.confirm')}
+          cancelButtonName={t('firstname.cancel')}
+          title={t('firstname.select_birthday')}
+          titleColor='#FF3B6D'
+          onCancel={() => {
+            console.log('Modal Canceled');
+            setDatePickerOpen(false);
+          }}
+          onConfirm={() => {
+            console.log('Modal Confirmed');
+            setDatePickerOpen(false);
+          }}
+          open={datePickerOpen}
+        >
+          {datePickerOpen && (
+            <RNDateTimePicker
+              value={selectedDate}
+              mode="date"
+              maximumDate={new Date()}
+              display='spinner'
+              onChange={(event, date) => {
+                console.log('DatePicker onChange:', event.type, date);
+                handleDateConfirm(event, date);
+              }} />
+          )}
+        </CustomeModal>
+      ) : (
+        datePickerOpen && (
+          <RNDateTimePicker
+            value={selectedDate}
+            mode="date"
+            maximumDate={new Date()}
+            display='default'
+            onChange={(event, date) => {
+              console.log('Android DatePicker onChange:', event.type, date);
+              if (event.type === 'set' && date) {
+                setSelectedDate(date);
+                const formattedDate = formatDate(date);
+                setBirthday(formattedDate);
+              }
+              setDatePickerOpen(false);
+            }} />
+        )
+      )}
 
       {/* Gender Selection Modal */}
       <Modal
@@ -670,11 +710,18 @@ const EditProfile = ({ navigation }) => {
                 </Text>
               </TouchableOpacity>
             ))}
-            <TouchableOpacity
-              style={styles.modalCancelButton}
-              onPress={() => setShowAgeRangeModal(false)}>
-              <Text style={styles.modalCancelText}>{t('editprofile.cancel')}</Text>
-            </TouchableOpacity>
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => setShowAgeRangeModal(false)}>
+                <Text style={styles.modalCancelText}>{t('editprofile.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalConfirmButton}
+                onPress={() => setShowAgeRangeModal(false)}>
+                <Text style={styles.modalConfirmText}>{t('firstname.confirm')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -937,13 +984,37 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   modalCancelButton: {
+    flex: 1,
     marginTop: 10,
-    padding: 16,
+    paddingVertical: 16,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12,
+    marginRight: 5,
   },
   modalCancelText: {
     color: 'rgba(255,255,255,0.6)',
     fontSize: 16,
     textAlign: 'center',
+    fontWeight: '600',
+  },
+  modalButtonsRow: {
+    flexDirection: 'row',
+    width: '100%',
+    marginTop: 10,
+  },
+  modalConfirmButton: {
+    flex: 1,
+    marginTop: 10,
+    paddingVertical: 16,
+    backgroundColor: '#FF3B6D',
+    borderRadius: 12,
+    marginLeft: 5,
+  },
+  modalConfirmText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    textAlign: 'center',
+    fontWeight: '600',
   },
 });
 
