@@ -10,11 +10,13 @@ import {
   ActivityIndicator,
   RefreshControl,
   Modal,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { RotateCcw, Trash2, ArrowLeft } from 'lucide-react-native';
 import apiService from '../../services/apiService';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ArchivedUsers = ({ navigation }) => {
   const { t } = useTranslation();
@@ -26,6 +28,7 @@ const ArchivedUsers = ({ navigation }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [restoring, setRestoring] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     fetchDeletedUsers();
@@ -35,7 +38,7 @@ const ArchivedUsers = ({ navigation }) => {
     try {
       setLoading(true);
       const response = await apiService.GetApi('api/admin/users/deleted');
-      
+
       if (response.success) {
         setUsers(response.users);
       }
@@ -59,7 +62,7 @@ const ArchivedUsers = ({ navigation }) => {
     try {
       setRestoring(true);
       const response = await apiService.Put(`api/admin/users/${selectedUser.id}/restore`);
-      
+
       if (response.success) {
         setUsers(users.filter(user => user._id !== selectedUser.id));
         setShowRestoreModal(false);
@@ -84,7 +87,7 @@ const ArchivedUsers = ({ navigation }) => {
     try {
       setDeleting(true);
       const response = await apiService.Delete(`api/admin/users/${selectedUser.id}/permanent`);
-      
+
       if (response.success) {
         setUsers(users.filter(user => user._id !== selectedUser.id));
         setShowDeleteModal(false);
@@ -150,7 +153,8 @@ const ArchivedUsers = ({ navigation }) => {
 
   return (
     <LinearGradient colors={['#5D1F3A', '#38152C', '#070A1A']} style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Platform.OS === 'android' && insets.top + 10 }]}>
+
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -286,7 +290,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 60,
+    // paddingTop: 60,
     paddingBottom: 20,
   },
   backButton: {

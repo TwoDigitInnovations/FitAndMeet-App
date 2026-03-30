@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Modal,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { Trash2, Archive } from 'lucide-react-native';
@@ -18,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { deleteAuthToken } from '../../utils/storage';
 import { AuthContext } from '../../../App';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const UserManagement = ({ navigation }) => {
   const { t } = useTranslation();
@@ -29,6 +31,7 @@ const UserManagement = ({ navigation }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const { logout } = useContext(AuthContext);
 
@@ -42,7 +45,7 @@ const UserManagement = ({ navigation }) => {
     try {
       setLoading(true);
       const response = await apiService.GetApi('api/admin/users');
-      console.log('new response',response)
+      console.log('new response', response)
       if (response.success) {
         setUsers(response.users);
       }
@@ -66,7 +69,7 @@ const UserManagement = ({ navigation }) => {
     try {
       setDeleting(true);
       const response = await apiService.Put(`api/admin/users/${selectedUser.id}/soft-delete`);
-      
+
       if (response.success) {
         setUsers(users.filter(user => user._id !== selectedUser.id));
         setShowDeleteModal(false);
@@ -120,15 +123,15 @@ const UserManagement = ({ navigation }) => {
     <View style={styles.userCard}>
       <Image
         source={
-          item.photos && item.photos.length > 0
-            ? { uri: item.photos[0].url }
+          (item.photos && item.photos.length > 0 && item.photos[0]?.url)
+            ? { uri: item.photos[0]?.url }
             : require('../../Assets/images/layout.png')
         }
         style={styles.userImage}
       />
       <View style={styles.userInfo}>
         <Text style={styles.userName}>
-          {item.firstName || 'No Name'} 
+          {item.firstName || 'No Name'}
           {!item.profileCompleted && <Text style={styles.incompleteTag}> (Incomplete)</Text>}
         </Text>
         <Text style={styles.userDetails}>
@@ -156,7 +159,7 @@ const UserManagement = ({ navigation }) => {
 
   return (
     <LinearGradient colors={['#5D1F3A', '#38152C', '#070A1A']} style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Platform.OS === 'android' && insets.top + 10 }]}>
         <Text style={styles.headerTitle}>{t('admin.user_management')}</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity
@@ -303,7 +306,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 60,
+    // paddingTop: 60,
     paddingBottom: 20,
   },
   headerButtons: {

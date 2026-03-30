@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,22 +10,25 @@ import {
   ActivityIndicator,
   Dimensions,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
 import SafeImage from '../../components/SafeImage';
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const {height} = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 const isSmallScreen = height < 300;
 const topPadding = isSmallScreen ? 35 : 50;
 
-const Notifications = ({navigation}) => {
-  const {t} = useTranslation();
+const Notifications = ({ navigation }) => {
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const insets = useSafeAreaInsets();
 
   // Translate notification messages
   const translateNotificationMessage = (message, senderName) => {
@@ -43,10 +46,10 @@ const Notifications = ({navigation}) => {
 
   useEffect(() => {
     fetchNotifications();
-    
-    
+
+
     return () => {
-     
+
     };
   }, []);
 
@@ -80,7 +83,7 @@ const Notifications = ({navigation}) => {
         // Update local state
         setNotifications(prev =>
           prev.map(n =>
-            n.id === notification.id ? {...n, isRead: true} : n
+            n.id === notification.id ? { ...n, isRead: true } : n
           )
         );
         setUnreadCount(prev => Math.max(0, prev - 1));
@@ -89,7 +92,7 @@ const Notifications = ({navigation}) => {
       }
     }
 
-    
+
     if (notification.type === 'like' || notification.type === 'match') {
       navigation.navigate('ProfileDetails', {
         profile: {
@@ -97,7 +100,7 @@ const Notifications = ({navigation}) => {
           name: notification.sender.name,
           age: notification.sender.age,
           image: notification.sender.image,
-          photos: notification.sender.image ? [{url: notification.sender.image}] : [],
+          photos: notification.sender.image ? [{ url: notification.sender.image }] : [],
         },
       });
     }
@@ -130,13 +133,13 @@ const Notifications = ({navigation}) => {
   };
 
   const getMessageCount = (notification) => {
-   
+
     return null;
   };
 
-  const renderNotification = ({item}) => {
+  const renderNotification = ({ item }) => {
     const messageCount = getMessageCount(item);
-    
+
     return (
       <TouchableOpacity
         style={[
@@ -199,7 +202,7 @@ const Notifications = ({navigation}) => {
       <StatusBar barStyle="light-content" backgroundColor="#5D1F3A" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Platform.OS === 'android' && insets.top + 10 }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}>
@@ -225,7 +228,7 @@ const Notifications = ({navigation}) => {
         </View>
       ) : notifications.length === 0 ? (
         <View style={styles.emptyContainer}>
-        
+
           <Text style={styles.emptyText}>{t('notifications.no_notifications')}</Text>
           <Text style={styles.emptySubText}>
             {t('notifications.no_notifications_desc')}
@@ -261,7 +264,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: topPadding,
+    // paddingTop: topPadding,
     paddingBottom: 20,
   },
   backButton: {
