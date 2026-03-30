@@ -1,9 +1,29 @@
- const devUrl = 'https://api.fitandmeet.com/';
+   const devUrl = 'https://api.fitandmeet.com/';
 
 //  const devUrl = 'http://10.0.2.2:5000/';  // Android Emulator (Backend runs on port 5000)
-//  const devUrl = 'http://192.168.1.5:5000/';  // Real Device
+  //  const devUrl = 'http://192.168.1.7:5000/';  // Real Device
 
-let apiUrl = devUrl;
+// Fallback URLs for different environments
+// const prodUrl = 'https://api.fitandmeet.com/';
+const emulatorUrl = 'http://10.0.2.2:5000/';
+
+
+let apiUrl;
+try {
+  
+  if (__DEV__) {
+  
+    apiUrl = devUrl;
+  } else {
+    // Use production server
+    apiUrl = prodUrl;
+  }
+} catch (error) {
+  // Fallback to development URL
+  apiUrl = devUrl;
+}
+
+console.log('🌐 Using API URL:', apiUrl);
 export const Googlekey = 'AIzaSyBSJ4feXtXRl7L4BxOrMubz8fciujaMBTk';
 export const Currency = '$';
 

@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiService from '../../services/apiService';
 import LinearGradient from 'react-native-linear-gradient';
 import {
@@ -28,7 +29,7 @@ const { width, height } = Dimensions.get('window');
 const isSmallScreen = height < 300;
 const topPadding = isSmallScreen ? 35 : 50;
 
-const Home = ({ navigation }) => {
+const Home = ({ navigation, route }) => {
   const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [profiles, setProfiles] = useState([]);
@@ -80,8 +81,39 @@ const Home = ({ navigation }) => {
     React.useCallback(() => {
       fetchLikedProfiles();
       fetchUnreadNotifications();
-    }, [])
+      
+      // Check if preferences were changed and refresh if needed
+      const checkPreferencesChanged = async () => {
+        try {
+          const preferencesChanged = await AsyncStorage.getItem('profilePreferencesChanged');
+          if (preferencesChanged === 'true') {
+            fetchPotentialMatches();
+            // Clear the flag
+            await AsyncStorage.removeItem('profilePreferencesChanged');
+          }
+        } catch (error) {
+          console.error('Error checking preferences flag:', error);
+        }
+      };
+      
+      checkPreferencesChanged();
+      
+      // Check if we need to refresh due to profile updates
+      if (route.params?.refresh) {
+        fetchPotentialMatches();
+        // Clear the refresh param
+        navigation.setParams({ refresh: false });
+      }
+    }, [route.params?.refresh, route.params?.timestamp])
   );
+
+  // Listen for navigation params to trigger refresh
+  useEffect(() => {
+    if (route.params?.refresh) {
+      fetchPotentialMatches();
+      navigation.setParams({ refresh: false });
+    }
+  }, [route.params?.refresh, route.params?.timestamp]);
 
   const fetchUnreadNotifications = async () => {
     try {

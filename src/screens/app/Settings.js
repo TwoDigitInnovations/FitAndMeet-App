@@ -38,7 +38,7 @@ const Settings = ({ navigation }) => {
 
 
   // Get logout function from AuthContext
-  const { logout } = useContext(AuthContext);
+  const { logout, setIsAuthenticated } = useContext(AuthContext);
 
   useEffect(() => {
     fetchProfileData();
@@ -52,11 +52,14 @@ const Settings = ({ navigation }) => {
       if (response.success) {
         setProfileData(response.data);
       } else {
-        Alert.alert(t('auth.otp.error'), response.message || t('settings.failed_load_profile'));
+        // Don't show alert for profile stats failure, just log it
+        console.warn('Profile stats not available:', response.message);
+        setProfileData({ stats: { superLikes: 0, profileViews: 0 } });
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);
-      Alert.alert(t('auth.otp.error'), t('settings.failed_load_profile'));
+      // Set default stats instead of showing error to user
+      setProfileData({ stats: { superLikes: 0, profileViews: 0 } });
     } finally {
       setLoading(false);
     }
@@ -94,32 +97,35 @@ const Settings = ({ navigation }) => {
       setLoggingOut(true);
       setShowLogoutModal(false);
 
-   
+      // First try to call logout API with current token
       try {
-        await apiService.Post('api/profile/logout', {});
-       
+        const response = await apiService.Post('api/profile/logout', {});
+        console.log("API logout response:", response);
       } catch (apiError) {
-        console.log(" API logout failed, but continuing with local logout:", apiError);
+        console.log("API logout failed, but continuing with local logout:", apiError);
       }
 
-     
-      await deleteAuthToken();
+      // Then perform local logout (delete token and update context)
       if (logout) {
-        await logout();
+        await logout(); // This will delete token and update context
+      } else {
+        // Fallback if logout function not available
+        await deleteAuthToken();
+        setIsAuthenticated(false);
       }
 
       console.log("Logout completed successfully");
     } catch (error) {
-      console.error(' Logout error:', error);
+      console.error('Logout error:', error);
 
-     
+      // Fallback: force local logout even if everything fails
       try {
         await deleteAuthToken();
         if (logout) {
           await logout();
         }
       } catch (localLogoutError) {
-        console.error(' Local logout also failed:', localLogoutError);
+        console.error('Local logout also failed:', localLogoutError);
       }
     } finally {
       setLoggingOut(false);

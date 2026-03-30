@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  StatusBar,
   Image,
   Alert,
   ActivityIndicator,
@@ -14,16 +13,21 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
 import CameraGalleryPicker from '../../components/CameraGalleryPeacker';
+import SuccessModal from '../../components/SuccessModal';
 import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../../../App';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const UploadDocuments = ({ navigation }) => {
-  const { logout } = useContext(AuthContext);
   const [idDocument, setIdDocument] = useState(null);
   const [gymDocument, setGymDocument] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [currentUploadType, setCurrentUploadType] = useState(null);
+  const [successModal, setSuccessModal] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    onClose: () => {}
+  });
   const { t } = useTranslation();
   const insets = useSafeAreaInsets()
 
@@ -71,10 +75,20 @@ const UploadDocuments = ({ navigation }) => {
 
         if (currentUploadType === 'id') {
           setIdDocument(documentData);
-          Alert.alert(t('auth.otp.otp_sent'), t('uploaddocuments.success_id'));
+          setSuccessModal({
+            visible: true,
+            title: t('uploaddocuments.success_title'),
+            message: t('uploaddocuments.success_id'),
+            onClose: () => setSuccessModal(prev => ({ ...prev, visible: false }))
+          });
         } else {
           setGymDocument(documentData);
-          Alert.alert(t('auth.otp.otp_sent'), t('uploaddocuments.success_gym'));
+          setSuccessModal({
+            visible: true,
+            title: t('uploaddocuments.success_title'),
+            message: t('uploaddocuments.success_gym'),
+            onClose: () => setSuccessModal(prev => ({ ...prev, visible: false }))
+          });
         }
       } else {
         Alert.alert(t('auth.otp.error'), uploadResponse.error || t('uploaddocuments.upload_error'));
@@ -125,20 +139,17 @@ const UploadDocuments = ({ navigation }) => {
         console.log('Next Step:', response.nextStep);
         console.log('User Step:', response.user?.currentStep);
 
-        Alert.alert(
-          t('uploaddocuments.documents_uploaded'),
-          t('uploaddocuments.documents_uploaded_message'),
-          [
-            {
-              text: t('uploaddocuments.continue'),
-              onPress: () => {
-                const nextScreen = response.nextStep || 'FirstName';
-                console.log(`Navigating to ${nextScreen}`);
-                navigation.navigate(nextScreen);
-              }
-            }
-          ]
-        );
+        setSuccessModal({
+          visible: true,
+          title: t('uploaddocuments.documents_uploaded'),
+          message: t('uploaddocuments.documents_uploaded_message'),
+          onClose: () => {
+            setSuccessModal(prev => ({ ...prev, visible: false }));
+            const nextScreen = response.nextStep || 'FirstName';
+            console.log(`Navigating to ${nextScreen}`);
+            navigation.navigate(nextScreen);
+          }
+        });
       } else {
         console.log('=== UPLOAD FAILED ===');
         console.log('Error:', response.message);
@@ -255,6 +266,13 @@ const UploadDocuments = ({ navigation }) => {
         height={1024}
         quality={0.8}
         base64={false}
+      />
+
+      <SuccessModal
+        visible={successModal.visible}
+        title={successModal.title}
+        message={successModal.message}
+        onClose={successModal.onClose}
       />
     </LinearGradient>
   );

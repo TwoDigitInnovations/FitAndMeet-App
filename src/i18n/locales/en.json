@@ -7,11 +7,12 @@
     "english": "English",
     "french": "French",
     "sign_up": "Sign up",
-    "sign_in": "Sign in"
+    "sign_in": "Sign in",
+    "ok": "OK"
   },
   "welcome": {
     "title": "Welcome Fit & Meet",
-    "subtitle": "Let's Find Your Perfect Fit Match",
+    "subtitle": "FIND YOUR PERFECT PARTNER",
     "terms_text": "By continuing you accept the",
     "terms_link": "Term & Conditions"
   },
@@ -57,8 +58,13 @@
     "gym_label": "Gym Meembership Contract",
     "uploading": "Uploading...",
     "next_button": "Next",
+    "success_title": "Upload Successful!",
     "success_id": "ID document uploaded successfully",
     "success_gym": "Gym membership document uploaded successfully",
+    "id_uploaded_title": "ID Document Uploaded!",
+    "id_uploaded_message": "Your ID document has been uploaded successfully.",
+    "gym_uploaded_title": "Gym Document Uploaded!",
+    "gym_uploaded_message": "Your gym membership document has been uploaded successfully.",
     "missing_documents": "Missing Documents",
     "missing_documents_message": "Please upload both ID and gym membership documents",
     "documents_uploaded": "Documents Uploaded!",
@@ -119,6 +125,7 @@
     "next_button": "Next",
     "uploading": "Uploading...",
     "photo_uploaded": "Photo uploaded successfully",
+    "photo_success_title": "Photo Upload Success",
     "registration_complete": "Registration Complete!",
     "registration_complete_message": "Welcome to Fit & Meet! Your profile has been created successfully.",
     "get_started": "Get Started",
@@ -276,7 +283,8 @@
     "loading_profiles": "Loading liked profiles...",
     "no_liked_profiles": "No liked profiles yet",
     "start_liking_profiles": "Start liking profiles to see them here",
-    "failed_load_profiles": "Failed to load liked profiles"
+    "failed_load_profiles": "Failed to load liked profiles",
+    "pull_to_refresh": "Pull to refresh"
   },
   "chatlist": {
     "messages": "Messages",
@@ -397,7 +405,6 @@
     "remove_photo": "Remove Photo",
     "remove_photo_confirm": "Are you sure you want to remove this photo?",
     "remove": "Remove",
-    "photo_upload_success": "Photo uploaded successfully",
     "profile_updated": "Profile Updated!",
     "profile_updated_message": "Your profile has been updated successfully."
   },

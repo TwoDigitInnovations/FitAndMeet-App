@@ -11,11 +11,14 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  RefreshControl,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -28,11 +31,12 @@ const isNarrowScreen = width < 400; // Small screens
 const buttonPadding = isNarrowScreen ? 14 : 20;
 const buttonFontSize = isNarrowScreen ? 13 : 14;
 
-const Discover = ({ navigation }) => {
+const Discover = ({ navigation, route }) => {
   const { t, i18n } = useTranslation();
   const [selectedFilter, setSelectedFilter] = useState('Near by');
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
   const filterOptions = [t('discover.near_by'), t('discover.online_now'), t('discover.new_profile')];
@@ -46,6 +50,42 @@ const Discover = ({ navigation }) => {
     fetchProfiles();
   }, [selectedFilter]);
 
+  // Listen for navigation params to trigger refresh
+  useEffect(() => {
+    if (route.params?.refresh) {
+      fetchProfiles();
+      // Clear the refresh param to prevent infinite loops
+      navigation.setParams({ refresh: false });
+    }
+  }, [route.params?.refresh, route.params?.timestamp]);
+
+  // Also refresh when screen comes into focus (for better UX)
+  useFocusEffect(
+    React.useCallback(() => {
+      // Check if preferences were changed and refresh if needed
+      const checkPreferencesChanged = async () => {
+        try {
+          const preferencesChanged = await AsyncStorage.getItem('profilePreferencesChanged');
+          if (preferencesChanged === 'true') {
+            fetchProfiles();
+            // Don't clear the flag here - let Home screen clear it
+          }
+        } catch (error) {
+          console.error('Error checking preferences flag:', error);
+        }
+      };
+      
+      checkPreferencesChanged();
+      
+      // Only refresh if coming from EditProfile or if explicitly requested
+      if (route.params?.refresh || route.params?.fromEdit) {
+        fetchProfiles();
+        // Clear params after refresh
+        navigation.setParams({ refresh: false, fromEdit: false });
+      }
+    }, [route.params?.refresh, route.params?.fromEdit])
+  );
+
   const getCurrentUser = async () => {
     try {
       const response = await apiService.GetApi('api/auth/profile');
@@ -57,9 +97,13 @@ const Discover = ({ navigation }) => {
     }
   };
 
-  const fetchProfiles = async () => {
+  const fetchProfiles = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       
       let filterParam = '';
       if (selectedFilter === t('discover.online_now')) {
@@ -86,7 +130,12 @@ const Discover = ({ navigation }) => {
       setProfiles([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    fetchProfiles(true);
   };
 
   const renderProfileCard = ({ item, index }) => {
@@ -239,6 +288,16 @@ const Discover = ({ navigation }) => {
           contentContainerStyle={styles.profilesList}
           showsVerticalScrollIndicator={false}
           columnWrapperStyle={styles.row}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#FF3B6D']}
+              tintColor="#FF3B6D"
+              title={t('discover.pull_to_refresh')}
+              titleColor="#FFFFFF"
+            />
+          }
         />
       )}
 

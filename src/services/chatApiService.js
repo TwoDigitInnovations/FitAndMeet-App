@@ -10,7 +10,7 @@ class ChatApiService {
       timeout: 10000,
     });
 
-    // Request interceptor to add auth token
+
     this.api.interceptors.request.use(
       async (config) => {
         const token = await getAuthToken();
@@ -46,9 +46,9 @@ class ChatApiService {
 
   async post(url, data = {}, config = {}) {
     try {
-      // Special handling for FormData
+    
       if (data instanceof FormData) {
-        // For React Native FormData uploads, we need specific configuration
+     
         const formDataConfig = {
           ...config,
           headers: {
@@ -56,7 +56,7 @@ class ChatApiService {
             'Content-Type': 'multipart/form-data',
           },
           transformRequest: (data, headers) => {
-            // Let React Native handle the FormData transformation
+         
             return data;
           },
         };

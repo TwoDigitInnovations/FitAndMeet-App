@@ -7,11 +7,12 @@
                    "english":  "Anglais",
                    "french":  "Français",
                    "sign_up":  "S\u0027inscrire",
-                   "sign_in":  "Se connecter"
+                   "sign_in":  "Se connecter",
+                   "ok":  "OK"
                },
     "welcome":  {
                     "title":  "Bienvenue sur Fit \u0026 Meet",
-                    "subtitle":  "Trouvons votre partenaire parfait",
+                    "subtitle":  "Trouvez votre partenaire idéal",
                     "terms_text":  "En continuant, vous acceptez les",
                     "terms_link":  "Termes et Conditions"
                 },
@@ -57,6 +58,7 @@
                             "gym_label":  "Contrat d\u0027adhésion à la salle de sport",
                             "uploading":  "Téléchargement...",
                             "next_button":  "Suivant",
+                            "success_title":  "Téléchargement réussi !",
                             "success_id":  "Document d\u0027identité téléchargé avec succès",
                             "success_gym":  "Document d\u0027adhésion à la salle de sport téléchargé avec succès",
                             "missing_documents":  "Documents manquants",
@@ -119,6 +121,7 @@
                       "next_button":  "Suivant",
                       "uploading":  "Téléchargement...",
                       "photo_uploaded":  "Photo téléchargée avec succès",
+                      "photo_success_title":  "Succès du téléchargement",
                       "registration_complete":  "Inscription terminée !",
                       "registration_complete_message":  "Bienvenue sur Fit \u0026 Meet ! Votre profil a été créé avec succès.",
                       "get_started":  "Commencer",
@@ -276,7 +279,8 @@
                      "loading_profiles":  "Chargement des profils aimés...",
                      "no_liked_profiles":  "Aucun profil aimé pour le moment",
                      "start_liking_profiles":  "Commencez à aimer des profils pour les voir ici",
-                     "failed_load_profiles":  "Échec du chargement des profils aimés"
+                     "failed_load_profiles":  "Échec du chargement des profils aimés",
+                     "pull_to_refresh":  "Tirez pour actualiser"
                  },
     "chatlist":  {
                      "messages":  "Messages",
@@ -309,7 +313,6 @@
                      "success":  "Succès",
                      "image_downloaded":  "Image téléchargée avec succès",
                      "download_failed":  "Échec du téléchargement de l\u0027image",
-                     "seen":  "Vu",
                      "seen":  "Vu"
                  },
     "matchscreen":  {
@@ -338,7 +341,7 @@
                                    }
                    },
     "navigation":  {
-                       "home":  "Maison",
+                       "home":  "Home",
                        "like":  "J\u0027aime",
                        "chat":  "Chat",
                        "profile":  "Profil"
@@ -393,7 +396,6 @@
                         "remove_photo":  "Supprimer la photo",
                         "remove_photo_confirm":  "Êtes-vous sûr de vouloir supprimer cette photo ?",
                         "remove":  "Supprimer",
-                        "photo_upload_success":  "Photo téléchargée avec succès",
                         "profile_updated":  "Profil mis à jour !",
                         "profile_updated_message":  "Votre profil a été mis à jour avec succès."
                     },

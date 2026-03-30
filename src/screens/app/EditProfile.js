@@ -13,6 +13,7 @@ import {
   Dimensions,
   Modal,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 import apiService from '../../services/apiService';
 import CameraGalleryPicker from '../../components/CameraGalleryPeacker';
@@ -95,7 +96,7 @@ const EditProfile = ({ navigation }) => {
         setAgeRange(user.ageRange || []);
         setInterests(user.interests || []);
         setBio(user.bio || '');
-        setPhotos(user.photos || []);
+        setPhotos((user.photos || []).filter(photo => photo && (photo.url || photo.uri)));
         setGymName(user.gymName || '');
       }
     } catch (error) {
@@ -123,19 +124,33 @@ const EditProfile = ({ navigation }) => {
         interests,
         bio,
         gymName,
-        photos
+        photos: photos.filter(photo => photo && (photo.url || photo.uri))
       };
 
       const response = await apiService.Put('api/profile/update', updates);
 
       if (response.success) {
+        // Check if preferences that affect matching were changed
+        const preferencesChanged = 
+          userData?.interestedIn !== interestedIn ||
+          userData?.lookingFor !== lookingFor ||
+          JSON.stringify(userData?.ageRange) !== JSON.stringify(ageRange);
+
         Alert.alert(
           t('editprofile.profile_updated'),
           t('editprofile.profile_updated_message'),
           [
             {
               text: 'OK',
-              onPress: () => navigation.goBack()
+              onPress: () => {
+                // Navigate back and trigger refresh if preferences changed
+                navigation.goBack();
+                
+                if (preferencesChanged) {
+                  // Store refresh flag in AsyncStorage to trigger refresh when user returns to tabs
+                  AsyncStorage.setItem('profilePreferencesChanged', 'true');
+                }
+              }
             }
           ]
         );
@@ -225,10 +240,10 @@ const EditProfile = ({ navigation }) => {
           uploadedAt: new Date()
         };
 
-        setPhotos([...photos, newPhoto]);
-        // Success - photo will be visible immediately
+        setPhotos(prevPhotos => [...prevPhotos, newPhoto]);
         console.log('Photo added successfully:', newPhoto.url);
       } else {
+        console.error('Invalid photo upload response:', response);
         Alert.alert(t('auth.otp.error'), t('firstname.upload_error'));
       }
     } catch (error) {
@@ -343,16 +358,27 @@ const EditProfile = ({ navigation }) => {
           <Text style={styles.sectionTitle}>{t('editprofile.photos')}</Text>
           <Text style={styles.sectionSubtitle}>{t('editprofile.photos_subtitle')}</Text>
           <View style={styles.photosGrid}>
-            {photos.slice(0, 6).map((photo, index) => (
-              <View key={index} style={styles.photoItem}>
-                <Image source={{ uri: photo.url }} style={styles.photoImage} />
-                <TouchableOpacity
-                  style={styles.removePhotoButton}
-                  onPress={() => handleRemovePhoto(index)}>
-                  <Text style={styles.removePhotoText}>×</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+            {photos.slice(0, 6).map((photo, index) => {
+              const imageUri = photo?.url || photo?.uri;
+              if (!imageUri) return null;
+              
+              return (
+                <View key={index} style={styles.photoItem}>
+                  <Image 
+                    source={{ uri: imageUri }} 
+                    style={styles.photoImage}
+                    onError={() => {
+                      console.warn('Failed to load image:', imageUri);
+                    }}
+                  />
+                  <TouchableOpacity
+                    style={styles.removePhotoButton}
+                    onPress={() => handleRemovePhoto(index)}>
+                    <Text style={styles.removePhotoText}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            }).filter(Boolean)}
             {photos.length < 6 && (
               <TouchableOpacity
                 style={styles.addPhotoButton}

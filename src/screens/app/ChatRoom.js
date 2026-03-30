@@ -23,12 +23,13 @@ import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import io from 'socket.io-client';
 import { getAuthToken } from '../../utils/storage';
 import { getCurrentUserInfo, getCurrentUserId } from '../../utils/tokenUtils';
-import chatApiService from '../../services/chatApiService';
+import apiService from '../../services/apiService';
 import SafeImage from '../../components/SafeImage';
 import ChatErrorBoundary from '../../components/ChatErrorBoundary';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ReactNativeBlobUtil from 'react-native-blob-util';
+import Constants from '../../utils/Constant';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 300;
@@ -50,6 +51,7 @@ const ChatRoom = ({ navigation, route }) => {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [socketConnected, setSocketConnected] = useState(false);
   const socketRef = useRef(null);
   const insets = useSafeAreaInsets();
 
@@ -65,9 +67,18 @@ const ChatRoom = ({ navigation, route }) => {
       () => setKeyboardVisible(false)
     );
 
+    // Add focus listener to rejoin conversation when screen comes back
+    const unsubscribeFocus = navigation.addListener('focus', () => {
+      // Rejoin conversation if socket is connected
+      if (conversationId && socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit('join-conversation', conversationId);
+      }
+    });
+
     return () => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
+      unsubscribeFocus();
       
       if (socketRef.current) {
         socketRef.current.disconnect();
@@ -90,13 +101,6 @@ const ChatRoom = ({ navigation, route }) => {
     };
   }, [conversationId, currentUser]);
 
-  useEffect(() => {
-    // Join conversation room when both conversationId and socket are ready
-    if (conversationId && socketRef.current && socketRef.current.connected) {
-      socketRef.current.emit('join-conversation', conversationId);
-    }
-  }, [conversationId, socketRef.current?.connected]);
-
   const initializeChat = async () => {
     try {
       setLoading(true);
@@ -111,7 +115,7 @@ const ChatRoom = ({ navigation, route }) => {
 
       if (!userInfo.avatar) {
         try {
-          const profileResponse = await chatApiService.get(`/api/profile/user/${userInfo._id}`);
+          const profileResponse = await apiService.GetApi(`api/profile/user/${userInfo._id}`);
           if (profileResponse.success && profileResponse.user) {
             userInfo = {
               _id: (profileResponse.user._id || profileResponse.user.id)?.toString() || userInfo._id,
@@ -145,24 +149,39 @@ const ChatRoom = ({ navigation, route }) => {
         socketRef.current = null;
       }
 
-      let socketURL = chatApiService.baseURL;
+      // Fix socket URL processing
+      let socketURL = Constants.baseUrl;
+      
+      // Remove trailing slash if present
       socketURL = socketURL.replace(/\/$/, '');
-      socketURL = socketURL.replace('/api', '');
+      
+      // Remove /api if present
+      if (socketURL.endsWith('/api')) {
+        socketURL = socketURL.replace('/api', '');
+      }
 
-      console.log('Setting up socket connection to:', socketURL);
+      const isProduction = socketURL.includes('api.fitandmeet.com');
 
+      // Socket.io configuration
       socketRef.current = io(socketURL, {
         auth: { token },
-        transports: ['websocket', 'polling'],
+        transports: ['websocket', 'polling'], // Try websocket first
         reconnection: true,
         reconnectionDelay: 1000,
-        reconnectionAttempts: 5,
-        timeout: 10000,
-        forceNew: true // Force new connection
+        reconnectionAttempts: 10,
+        timeout: 30000,
+        forceNew: true,
+        upgrade: true,
+        rememberUpgrade: false,
+        autoConnect: true,
+        withCredentials: true, // Important for CORS
+        extraHeaders: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       socketRef.current.on('connect', () => {
-        console.log('Socket connected successfully');
+        setSocketConnected(true);
         
         // Join conversation room immediately if conversationId exists
         if (conversationId) {
@@ -171,15 +190,20 @@ const ChatRoom = ({ navigation, route }) => {
       });
 
       socketRef.current.on('disconnect', (reason) => {
-        console.log('Socket disconnected:', reason);
+        setSocketConnected(false);
       });
 
       socketRef.current.on('connect_error', (error) => {
-        console.error('Socket connection error:', error.message);
+        console.error('🚫 Socket connection error:', error.message);
+        setSocketConnected(false);
       });
 
       socketRef.current.on('error', (error) => {
         console.error('Socket error:', error);
+      });
+
+      socketRef.current.on('conversation-joined', (data) => {
+        // Successfully joined conversation room
       });
 
       socketRef.current.on('new-message', (message) => {
@@ -200,13 +224,125 @@ const ChatRoom = ({ navigation, route }) => {
         };
 
         setMessages(prevMessages => {
-          // Check if message already exists
+          // Check if message already exists to prevent duplicates
           const exists = prevMessages.some(m => m._id === formattedMessage._id);
           if (exists) {
             return prevMessages;
           }
           
-          // Replace temp message if exists
+          // For image messages, remove any temp image messages from the same sender
+          if (formattedMessage.image && formattedMessage.user._id === currentUser?._id) {
+            const filteredMessages = prevMessages.filter(m => 
+              !(m._id.toString().startsWith('temp_image_') && m.user._id === formattedMessage.user._id)
+            );
+            return [formattedMessage, ...filteredMessages];
+          }
+          
+          // Replace temp message if exists (check by text content and sender)
+          const tempMessageIndex = prevMessages.findIndex(m => 
+            (m._id.toString().startsWith('temp_') || m._id.toString().startsWith('temp_like_')) && 
+            m.user._id === formattedMessage.user._id &&
+            m.text === formattedMessage.text &&
+            m.pending === true
+          );
+          
+          if (tempMessageIndex !== -1) {
+            const newMessages = [...prevMessages];
+            newMessages[tempMessageIndex] = formattedMessage;
+            return newMessages;
+          }
+          
+          // If no temp message found, add new message at the beginning
+          return [formattedMessage, ...prevMessages];
+        });
+      });
+
+      socketRef.current.on('messages-read', (data) => {
+        setMessages(prevMessages => 
+          prevMessages.map(msg => ({
+            ...msg,
+            seen: true
+          }))
+        );
+      });
+
+      // Handle reconnection
+      socketRef.current.on('reconnect', () => {
+        if (conversationId) {
+          socketRef.current.emit('join-conversation', conversationId);
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error setting up socket:', error);
+    }
+  };
+
+  const setupLocalFallback = async () => {
+    try {
+      const token = await getAuthToken();
+      if (!token) return;
+
+      // Try local development server as fallback
+      const localURL = 'http://192.168.1.6:5000';
+
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+
+      socketRef.current = io(localURL, {
+        auth: { token },
+        transports: ['polling', 'websocket'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 3,
+        timeout: 10000,
+        forceNew: true
+      });
+
+      // Add the same event listeners
+      socketRef.current.on('connect', () => {
+        setSocketConnected(true);
+        if (conversationId) {
+          socketRef.current.emit('join-conversation', conversationId);
+        }
+      });
+
+      socketRef.current.on('disconnect', (reason) => {
+        setSocketConnected(false);
+      });
+
+      socketRef.current.on('connect_error', (error) => {
+        console.error('🚫 Local fallback connection error:', error.message);
+      });
+
+      // Add other event listeners (same as main setup)
+      socketRef.current.on('conversation-joined', (data) => {
+        // Successfully joined conversation room via fallback
+      });
+
+      socketRef.current.on('new-message', (message) => {
+        
+        const formattedMessage = {
+          _id: message._id || Math.round(Math.random() * 1000000),
+          text: message.content || '',
+          createdAt: new Date(message.createdAt || Date.now()),
+          user: {
+            _id: message.sender?._id?.toString() || 'unknown',
+            name: message.sender?.firstName || t('chatroom.unknown_user'),
+            avatar: message.sender?.photos?.[0]?.url || null
+          },
+          image: message.mediaUrl && message.mediaUrl.startsWith('https://res.cloudinary.com/') 
+            ? message.mediaUrl 
+            : null,
+          type: message.type || 'text',
+          seen: false
+        };
+
+        setMessages(prevMessages => {
+          const exists = prevMessages.some(m => m._id === formattedMessage._id);
+          if (exists) return prevMessages;
+          
           const tempMessageIndex = prevMessages.findIndex(m => 
             m._id.toString().startsWith('temp_') && 
             m.user._id === formattedMessage.user._id &&
@@ -219,7 +355,91 @@ const ChatRoom = ({ navigation, route }) => {
             return newMessages;
           }
           
-          // Add new message at the beginning (since FlatList is inverted)
+          return [formattedMessage, ...prevMessages];
+        });
+      });
+
+    } catch (error) {
+      console.error('❌ Error setting up local fallback:', error);
+    }
+  };
+
+  const setupSocketWithPollingOnly = async () => {
+    try {
+      const token = await getAuthToken();
+      if (!token) return;
+
+      let socketURL = Constants.baseUrl;
+      socketURL = socketURL.replace(/\/$/, '');
+      if (socketURL.endsWith('/api')) {
+        socketURL = socketURL.replace('/api', '');
+      }
+
+      socketRef.current = io(socketURL, {
+        auth: { token },
+        transports: ['polling'], // Polling only
+        reconnection: true,
+        reconnectionDelay: 2000,
+        reconnectionAttempts: 3,
+        timeout: 15000,
+        forceNew: true
+      });
+
+      // Add the same event listeners as the main setup
+      socketRef.current.on('connect', () => {
+        setSocketConnected(true);
+        if (conversationId) {
+          socketRef.current.emit('join-conversation', conversationId);
+        }
+      });
+
+      socketRef.current.on('disconnect', (reason) => {
+        setSocketConnected(false);
+      });
+
+      socketRef.current.on('connect_error', (error) => {
+        console.error('Polling socket connection error:', error.message);
+      });
+
+      socketRef.current.on('conversation-joined', (data) => {
+        // Successfully joined conversation room
+      });
+
+      socketRef.current.on('new-message', (message) => {
+        const formattedMessage = {
+          _id: message._id || Math.round(Math.random() * 1000000),
+          text: message.content || '',
+          createdAt: new Date(message.createdAt || Date.now()),
+          user: {
+            _id: message.sender?._id?.toString() || 'unknown',
+            name: message.sender?.firstName || t('chatroom.unknown_user'),
+            avatar: message.sender?.photos?.[0]?.url || null
+          },
+          image: message.mediaUrl && message.mediaUrl.startsWith('https://res.cloudinary.com/') 
+            ? message.mediaUrl 
+            : null,
+          type: message.type || 'text',
+          seen: false
+        };
+
+        setMessages(prevMessages => {
+          const exists = prevMessages.some(m => m._id === formattedMessage._id);
+          if (exists) {
+            return prevMessages;
+          }
+          
+          const tempMessageIndex = prevMessages.findIndex(m => 
+            m._id.toString().startsWith('temp_') && 
+            m.user._id === formattedMessage.user._id &&
+            m.text === formattedMessage.text
+          );
+          
+          if (tempMessageIndex !== -1) {
+            const newMessages = [...prevMessages];
+            newMessages[tempMessageIndex] = formattedMessage;
+            return newMessages;
+          }
+          
           const newMessages = [formattedMessage, ...prevMessages];
           return newMessages;
         });
@@ -235,7 +455,7 @@ const ChatRoom = ({ navigation, route }) => {
       });
 
     } catch (error) {
-      console.error('Error setting up socket:', error);
+      console.error('Error setting up polling socket:', error);
     }
   };
 
@@ -248,8 +468,7 @@ const ChatRoom = ({ navigation, route }) => {
        
       }
 
-      const conversationsResponse = await chatApiService.get('/api/chat/conversations');
-      console.log(conversationsResponse)
+      const conversationsResponse = await apiService.GetApi('api/chat/conversations');
       if (conversationsResponse && conversationsResponse.success) {
         const existingConversation = conversationsResponse.conversations.find(
           conv => conv.otherUser && conv.otherUser.id === userId
@@ -259,8 +478,7 @@ const ChatRoom = ({ navigation, route }) => {
           setConversationId(existingConversation.id);
 
          
-          const messagesResponse = await chatApiService.get(`/api/chat/messages/${existingConversation.id}`);
-          console.log(messagesResponse)
+          const messagesResponse = await apiService.GetApi(`api/chat/messages/${existingConversation.id}`);
           if (messagesResponse && messagesResponse.success && messagesResponse.messages) {
             const formattedMessages = messagesResponse.messages.map(msg => {
               let imageUrl = null;
@@ -283,10 +501,9 @@ const ChatRoom = ({ navigation, route }) => {
               };
             });
 
-            console.log('Formatted messages with Cloudinary images:', formattedMessages.filter(m => m.image).length);
             setMessages(formattedMessages.reverse());
 
-            await chatApiService.put(`/api/chat/mark-read/${existingConversation.id}`);
+            await apiService.Put(`api/chat/mark-read/${existingConversation.id}`);
           }
         }
       }
@@ -367,67 +584,43 @@ const ChatRoom = ({ navigation, route }) => {
   const onSend = async () => {
     if (inputText.trim() && currentUser) {
       const tempId = `temp_${Date.now()}_${Math.round(Math.random() * 1000000)}`;
-      const newMessage = {
+      const messageText = inputText.trim();
+      
+      // Add temp message immediately for instant feedback
+      const tempMessage = {
         _id: tempId,
-        text: inputText.trim(),
+        text: messageText,
         createdAt: new Date(),
         user: currentUser,
         pending: true,
       };
 
-      const updatedMessages = [newMessage, ...messages];
-      setMessages(updatedMessages);
-      const messageText = inputText.trim();
-      setInputText('');
-
-
-      await saveMessagesToLocal(updatedMessages);
-
+      setMessages(prevMessages => [tempMessage, ...prevMessages]);
+      setInputText(''); // Clear input immediately
 
       try {
         const token = await getAuthToken();
         if (token) {
           const messageData = {
-            content: newMessage.text,
+            content: messageText,
             type: 'text',
             recipientId: userId,
             conversationId: conversationId
           };
 
-            const response = await chatApiService.post('/api/chat/send-message', messageData);
+          const response = await apiService.Post('api/chat/send-message', messageData);
 
           if (response.success) {
-            // Remove the temporary message and add the real one
-            setMessages(prevMessages => {
-              const filteredMessages = prevMessages.filter(msg => msg._id !== tempId);
-              
-              if (response.message) {
-                const updatedMessageFromBackend = {
-                  _id: response.message._id || newMessage._id,
-                  text: response.message.content || newMessage.text,
-                  createdAt: new Date(response.message.createdAt || newMessage.createdAt),
-                  user: {
-                    _id: response.message.sender?._id?.toString() || currentUser._id,
-                    name: response.message.sender?.firstName || currentUser.name,
-                    avatar: response.message.sender?.photos?.[0]?.url || currentUser.avatar
-                  },
-                  seen: false
-                };
-
-                // Only add if not already exists (socket might have already added it)
-                const exists = filteredMessages.some(m => m._id === updatedMessageFromBackend._id);
-                if (!exists) {
-                  return [updatedMessageFromBackend, ...filteredMessages];
-                }
-              }
-              
-              return filteredMessages;
-            });
-
             // Set conversation ID if new conversation
             if (!conversationId && response.message.conversation) {
               setConversationId(response.message.conversation);
+              
+              // Rejoin the new conversation room
+              if (socketRef.current && socketRef.current.connected) {
+                socketRef.current.emit('join-conversation', response.message.conversation);
+              }
             }
+            // Temp message will be replaced by socket message
           } else {
             console.error('Failed to send message to backend:', response.message);
             // Mark temp message as failed
@@ -440,6 +633,7 @@ const ChatRoom = ({ navigation, route }) => {
         }
       } catch (error) {
         console.error('Error sending message to backend:', error);
+        // Mark temp message as failed
         setMessages(prevMessages => 
           prevMessages.map(msg => 
             msg._id === tempId ? { ...msg, failed: true, pending: false } : msg
@@ -490,29 +684,27 @@ const ChatRoom = ({ navigation, route }) => {
   const sendImageMessage = async (imageAsset) => {
     if (!currentUser) return;
 
+    const tempId = `temp_image_${Date.now()}_${Math.round(Math.random() * 1000000)}`;
     const imageMessage = {
-      _id: Math.round(Math.random() * 1000000),
+      _id: tempId,
       text: '',
       createdAt: new Date(),
       user: currentUser,
       image: imageAsset.uri,
+      pending: true, // Mark as pending
     };
 
     const updatedMessages = [imageMessage, ...messages];
     setMessages(updatedMessages);
     await saveMessagesToLocal(updatedMessages);
 
- 
+    // Upload image using ReactNativeBlobUtil for better reliability
     try {
       const token = await getAuthToken();
       if (token) {
-
+        const uploadUrl = `${Constants.baseUrl}api/chat/send-media`;
+        
         try {
-          const ReactNativeBlobUtil = require('react-native-blob-util').default;
-
-          const uploadUrl = `${chatApiService.baseURL}api/chat/send-media`;
-          const token = await getAuthToken();
-
           const response = await ReactNativeBlobUtil.fetch(
             'POST',
             uploadUrl,
@@ -545,6 +737,11 @@ const ChatRoom = ({ navigation, route }) => {
           const responseData = response.json();
 
           if (responseData.success) {
+            // Remove the temporary message since socket will handle the real message
+            setMessages(prevMessages => 
+              prevMessages.filter(msg => msg._id !== tempId)
+            );
+
             if (!conversationId && responseData.message.conversation) {
               setConversationId(responseData.message.conversation);
             }
@@ -552,34 +749,29 @@ const ChatRoom = ({ navigation, route }) => {
             throw new Error(responseData.message || 'Upload failed');
           }
         } catch (blobError) {
-
-          const uploadUrl = `${chatApiService.baseURL}api/chat/send-media`;
-          const token = await getAuthToken();
-
-
-          const uploadFormData = new FormData();
-
-
+          // Fallback to regular fetch
+          const formData = new FormData();
+          
           const fileData = {
             uri: imageAsset.uri,
             type: imageAsset.type || 'image/jpeg',
             name: imageAsset.fileName || `image_${Date.now()}.jpg`,
           };
 
-          uploadFormData.append('file', fileData);
-          uploadFormData.append('type', 'image');
-          uploadFormData.append('recipientId', userId);
+          formData.append('file', fileData);
+          formData.append('type', 'image');
+          formData.append('recipientId', userId);
           if (conversationId) {
-            uploadFormData.append('conversationId', conversationId);
+            formData.append('conversationId', conversationId);
           }
 
           const uploadResponse = await fetch(uploadUrl, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
-             
+              // Remove Content-Type to let browser set it automatically with boundary
             },
-            body: uploadFormData,
+            body: formData,
           });
 
           if (!uploadResponse.ok) {
@@ -590,6 +782,11 @@ const ChatRoom = ({ navigation, route }) => {
           const responseData = await uploadResponse.json();
 
           if (responseData.success) {
+            // Remove the temporary message since socket will handle the real message
+            setMessages(prevMessages => 
+              prevMessages.filter(msg => msg._id !== tempId)
+            );
+
             if (!conversationId && responseData.message.conversation) {
               setConversationId(responseData.message.conversation);
             }
@@ -599,6 +796,15 @@ const ChatRoom = ({ navigation, route }) => {
         }
       }
     } catch (error) {
+      console.error('Error uploading image:', error);
+      
+      // Mark temp message as failed instead of removing it
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg._id === tempId ? { ...msg, failed: true, pending: false } : msg
+        )
+      );
+      
       Alert.alert(
         t('auth.otp.error'),
         t('chatroom.failed_send_image') || 'Failed to send image. Please check your connection.'
@@ -609,18 +815,19 @@ const ChatRoom = ({ navigation, route }) => {
   const sendLikeSticker = async () => {
     if (!currentUser) return;
 
-    const likeMessage = {
-      _id: Math.round(Math.random() * 1000000),
+    const tempId = `temp_like_${Date.now()}_${Math.round(Math.random() * 1000000)}`;
+    
+    // Add temp like message immediately for instant feedback
+    const tempLikeMessage = {
+      _id: tempId,
       text: '👍',
       createdAt: new Date(),
       user: currentUser,
+      pending: true,
     };
 
-    const updatedMessages = [likeMessage, ...messages];
-    setMessages(updatedMessages);
-    await saveMessagesToLocal(updatedMessages);
+    setMessages(prevMessages => [tempLikeMessage, ...prevMessages]);
 
-    
     try {
       const token = await getAuthToken();
       if (token) {
@@ -631,14 +838,36 @@ const ChatRoom = ({ navigation, route }) => {
           conversationId: conversationId
         };
 
-        const response = await chatApiService.post('/api/chat/send-message', messageData);
+        const response = await apiService.Post('api/chat/send-message', messageData);
 
-        if (response.success && !conversationId && response.message.conversation) {
-          setConversationId(response.message.conversation);
+        if (response.success) {
+          // Set conversation ID if new conversation
+          if (!conversationId && response.message.conversation) {
+            setConversationId(response.message.conversation);
+            
+            // Rejoin the new conversation room
+            if (socketRef.current && socketRef.current.connected) {
+              socketRef.current.emit('join-conversation', response.message.conversation);
+            }
+          }
+          // Temp message will be replaced by socket message
+        } else {
+          // Mark temp message as failed
+          setMessages(prevMessages => 
+            prevMessages.map(msg => 
+              msg._id === tempId ? { ...msg, failed: true, pending: false } : msg
+            )
+          );
         }
       }
     } catch (error) {
       console.error('Error sending like to backend:', error);
+      // Mark temp message as failed
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg._id === tempId ? { ...msg, failed: true, pending: false } : msg
+        )
+      );
     }
   };
 
@@ -887,9 +1116,9 @@ const ChatRoom = ({ navigation, route }) => {
 
 
           <View style={styles.todayContainer}>
-            <View style={styles.todayBadge}>
-              <Text style={styles.todayText}>{t('chatroom.today')}</Text>
-            </View>
+            
+
+            
           </View>
 
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useContext } from 'react';
 import {
   View,
   Text,
@@ -11,15 +11,17 @@ import {
   ActivityIndicator,
   Platform,
   ScrollView,
-  Modal,
 } from 'react-native';
 import apiService from '../../services/apiService';
 import CameraGalleryPicker from '../../components/CameraGalleryPeacker';
 import { useTranslation } from 'react-i18next';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
-import CustomeModal from '../../components/CustomeModal'
+import CustomeModal from '../../components/CustomeModal';
+import SuccessModal from '../../components/SuccessModal';
+import { UserContext } from '../../../App';
 
 const FirstName = ({ navigation }) => {
+  const [user, setUser] = useContext(UserContext);
   const [currentStep, setCurrentStep] = useState(1);
   const [firstName, setFirstName] = useState('');
   const [birthday, setBirthday] = useState('');
@@ -34,6 +36,8 @@ const FirstName = ({ navigation }) => {
   const [photos, setPhotos] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const { t } = useTranslation();
 
   const cameraGalleryRef = useRef(null);
@@ -160,22 +164,8 @@ const FirstName = ({ navigation }) => {
       const response = await apiService.Post('api/registration/complete', {});
 
       if (response.success) {
-        // Registration completed successfully
-        Alert.alert(
-          t('firstname.registration_complete'),
-          t('firstname.registration_complete_message'),
-          [
-            {
-              text: t('firstname.get_started'), onPress: () => {
-                // Navigate directly to TabNav (Home screen)
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'TabNav' }],
-                });
-              }
-            }
-          ]
-        );
+        // Registration completed successfully - show modal
+        setShowRegistrationModal(true);
       } else {
         if (response.missingFields && response.missingFields.length > 0) {
           Alert.alert(
@@ -231,7 +221,8 @@ const FirstName = ({ navigation }) => {
 
         await updateProfile({ photos: newPhotos });
 
-        Alert.alert(t('auth.otp.otp_sent'), t('firstname.photo_uploaded'));
+        // Show custom success modal instead of Alert.alert
+        setShowSuccessModal(true);
       } else {
         Alert.alert(t('auth.otp.error'), uploadResponse.error || t('firstname.upload_error'));
       }
@@ -782,6 +773,33 @@ const FirstName = ({ navigation }) => {
           title="Select your birthday"
         />
       }
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title={t('firstname.photo_success_title')}
+        message={t('firstname.photo_uploaded')}
+        onClose={() => setShowSuccessModal(false)}
+      />
+
+      <SuccessModal
+        visible={showRegistrationModal}
+        title={t('firstname.registration_complete')}
+        message={t('firstname.registration_complete_message')}
+        onClose={() => {
+          setShowRegistrationModal(false);
+          // Update user context and navigate to Home
+          setUser(prevUser => ({
+            ...prevUser,
+            profileCompleted: true
+          }));
+          setTimeout(() => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'App' }],
+            });
+          }, 100);
+        }}
+      />
 
     </View >
   );

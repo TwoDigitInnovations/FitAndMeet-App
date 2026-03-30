@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import {
   View,
   Text,
@@ -9,16 +9,27 @@ import {
   ImageBackground,
 } from 'react-native';
 import {useTranslation} from 'react-i18next';
+import { UserContext } from '../../../App';
 
 const RegistrationSuccess = ({navigation}) => {
   const {t} = useTranslation();
+  const [user, setUser] = useContext(UserContext);
   
-  const handleDone = () => {
+  const handleDone = async () => {
+    // Update user context to mark profile as completed
+    setUser(prevUser => ({
+      ...prevUser,
+      profileCompleted: true
+    }));
     
-    navigation.reset({
-      index: 0,
-      routes: [{name: 'App'}],
-    });
+    // Small delay to ensure context is updated
+    setTimeout(() => {
+      // Reset navigation to App which will re-evaluate and go to TabNav
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'App' }],
+      });
+    }, 100);
   };
 
   return (
