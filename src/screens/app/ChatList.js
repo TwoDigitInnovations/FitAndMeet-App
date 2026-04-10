@@ -93,6 +93,8 @@ const ChatList = ({ navigation }) => {
 
       socketRef.current.on('connect', () => {
         console.log('ChatList socket connected');
+        // Join all conversation rooms when connected
+        joinAllConversationRooms();
       });
 
       socketRef.current.on('disconnect', () => {
@@ -103,9 +105,26 @@ const ChatList = ({ navigation }) => {
         updateConversationWithNewMessage(message);
       });
 
+      socketRef.current.on('reconnect', () => {
+        console.log('ChatList socket reconnected');
+        // Rejoin all conversation rooms on reconnect
+        joinAllConversationRooms();
+      });
+
     } catch (error) {
       console.error('ChatList socket error:', error);
     }
+  };
+
+  const joinAllConversationRooms = () => {
+    if (!socketRef.current || !socketRef.current.connected) return;
+    
+    // Join each conversation room
+    chats.forEach(chat => {
+      if (chat.id) {
+        socketRef.current.emit('join-conversation', chat.id);
+      }
+    });
   };
 
   const updateConversationWithNewMessage = (message) => {
@@ -172,6 +191,14 @@ const ChatList = ({ navigation }) => {
 
         if (response.success && response.conversations) {
           setChats(response.conversations);
+          // Join conversation rooms after loading conversations
+          if (socketRef.current && socketRef.current.connected) {
+            response.conversations.forEach(conv => {
+              if (conv.id) {
+                socketRef.current.emit('join-conversation', conv.id);
+              }
+            });
+          }
           return;
         }
       } catch (backendError) {
@@ -204,6 +231,14 @@ const ChatList = ({ navigation }) => {
 
         console.log('Formatted chats:', formattedChats);
         setChats(formattedChats);
+        // Join conversation rooms after loading from local storage
+        if (socketRef.current && socketRef.current.connected) {
+          formattedChats.forEach(chat => {
+            if (chat.id) {
+              socketRef.current.emit('join-conversation', chat.id);
+            }
+          });
+        }
       } else {
         setChats([]);
       }

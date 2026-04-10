@@ -22,6 +22,7 @@ const {width, height} = Dimensions.get('window');
 const CustomTabBar = ({state, descriptors, navigation}) => {
   const {t, i18n} = useTranslation();
   const animatedValue = useRef(new Animated.Value(0)).current;
+  const isFrench = i18n.language === 'fr';
 
   const tabs = [
     {icon: HomeIcon, label: t('navigation.home')},
@@ -42,26 +43,26 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
   const tabWidth = width / 4;
 
   return (
-<ImageBackground
-  key={state.index}
-  source={
-    state.index === 1 ? require('../Assets/images/like.png') :
-    state.index === 2 ? require('../Assets/images/chat.png') :
-    state.index === 3 ? require('../Assets/images/profile.png') :
-    require('../Assets/images/home1.png')
-  }
-  style={[
-    styles.tabBar, 
-    {
-      bottom: height * 0.015, 
-      marginLeft: state.index === 0 || state.index === 1 ? width * 0.01 : 
-                  state.index === 2 ? width * 0.015 :  
-                  state.index === 3 ? width * 0.015 : 0,  
-    }
-  ]}
-  resizeMode={state.index === 1 ? "contain" : "contain"} 
-  imageStyle={{height: '100%'}}>
-      
+    <ImageBackground
+      key={state.index}
+      source={
+        state.index === 1 ? require('../Assets/images/like.png') :
+        state.index === 2 ? require('../Assets/images/chat.png') :
+        state.index === 3 ? require('../Assets/images/profile.png') :
+        require('../Assets/images/home1.png')
+      }
+      style={[
+        styles.tabBar,
+        {
+          bottom: height * 0.015,
+          marginLeft: state.index === 0 || state.index === 1 ? width * 0.01 :
+                      state.index === 2 ? width * 0.015 :
+                      state.index === 3 ? width * 0.015 : 0,
+        }
+      ]}
+      resizeMode="contain"
+      imageStyle={{height: '100%'}}>
+
       <Animated.View
         style={[
           styles.slider,
@@ -71,9 +72,9 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
                 translateX: animatedValue.interpolate({
                   inputRange: [0, 1, 2, 3],
                   outputRange: [
-                    15 + width * 0.01,  
-                    tabWidth + 15 - 20, 
-                    tabWidth * 2 + 15 - 45, 
+                    15 + width * 0.01,
+                    tabWidth + 15 - 20,
+                    tabWidth * 2 + 15 - 45,
                     tabWidth * 3 + 15 - 55
                   ],
                 }),
@@ -82,10 +83,10 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
                 translateY: animatedValue.interpolate({
                   inputRange: [0, 1, 2, 3],
                   outputRange: [
-                    -height * 0.008,  
-                    0,  
-                    0,  
-                    0   
+                    -height * 0.008,
+                    0,
+                    0,
+                    0
                   ],
                 }),
               },
@@ -94,11 +95,17 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
         ]}
       />
 
-    
       {state.routes.map((route, index) => {
         const isFocused = state.index === index;
         const Icon = tabs[index].icon;
         const label = tabs[index].label;
+
+        const isHomeTab = index === 0;
+        const labelStyle = [
+          styles.label,
+          
+          isHomeTab && isFrench && isFocused && styles.labelFrench,
+        ];
 
         const onPress = () => {
           const event = navigation.emit({
@@ -117,17 +124,15 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
             key={route.key}
             onPress={onPress}
             style={styles.tab}>
-  <View style={[
-  styles.tabInner,
-  index === 0 && (isFocused ? styles.tabInnerHomeActive : (!isFocused && (state.index !== 0) && (state.index === 3 ? styles.tabInnerHomeWhenProfileActive : styles.tabInnerHomeInactive))),
-  index === 1 && (isFocused ? styles.tabInnerHeartActive : (state.index === 2 ? styles.tabInnerHeartWhenChatActive : (state.index === 3 ? styles.tabInnerHeartWhenProfileActive : styles.tabInnerHeart))),
-  index === 2 && (isFocused ? styles.tabInnerChatActive : (state.index === 1 ? styles.tabInnerChatWhenLikeActive : (state.index === 3 ? styles.tabInnerChatWhenProfileActive : styles.tabInnerChatInactive))),
-
- 
-  
- 
-  index === 3 && (isFocused ? styles.tabInnerProfileActive : (state.index === 1 ? styles.tabInnerProfileWhenLikeActive : (state.index === 2 ? styles.tabInnerProfileWhenChatActive : styles.tabInnerProfileInactive)))
-]}>
+            <View style={[
+              styles.tabInner,
+              index === 0 && (isFocused
+                ? (isFrench ? styles.tabInnerHomeActiveFrench : styles.tabInnerHomeActive)
+                : (!isFocused && (state.index !== 0) && (state.index === 3 ? styles.tabInnerHomeWhenProfileActive : styles.tabInnerHomeInactive))),
+              index === 1 && (isFocused ? styles.tabInnerHeartActive : (state.index === 2 ? styles.tabInnerHeartWhenChatActive : (state.index === 3 ? styles.tabInnerHeartWhenProfileActive : styles.tabInnerHeart))),
+              index === 2 && (isFocused ? styles.tabInnerChatActive : (state.index === 1 ? styles.tabInnerChatWhenLikeActive : (state.index === 3 ? styles.tabInnerChatWhenProfileActive : styles.tabInnerChatInactive))),
+              index === 3 && (isFocused ? styles.tabInnerProfileActive : (state.index === 1 ? styles.tabInnerProfileWhenLikeActive : (state.index === 2 ? styles.tabInnerProfileWhenChatActive : styles.tabInnerProfileInactive)))
+            ]}>
               {!isFocused && (
                 <View style={styles.inactiveIconContainer}>
                   <Icon
@@ -144,12 +149,11 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
                     color="#FFFFFF"
                     strokeWidth={2.5}
                   />
+                  {/* ✅ FIX: numberOfLines bilkul nahi, labelFrench style se font chhota */}
                   {label && (
-                    <Text style={[
-                      styles.label,
-                      // Smaller font for French home tab to fit "Maison"
-                      index === 0 && i18n.language === 'fr' && { fontSize: 14 }
-                    ]} numberOfLines={1}>{label}</Text>
+                    <Text style={labelStyle}>
+                      {label}
+                    </Text>
                   )}
                 </>
               )}
@@ -182,8 +186,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '100%',
     alignItems: 'center',
-    paddingHorizontal: width * 0.014, 
-     overflow: 'hidden',
+    paddingHorizontal: width * 0.014,
   },
   slider: {
     position: 'absolute',
@@ -192,7 +195,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F23576',
     borderRadius: 30,
     alignSelf: 'center',
-    top: '20%', 
+    top: '20%',
   },
   tab: {
     flex: 1,
@@ -204,8 +207,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: width * 0.022,  
-    marginLeft: width * 0.05,  
+    paddingHorizontal: width * 0.022,
+    marginLeft: width * 0.05,
   },
   label: {
     color: '#FFFFFF',
@@ -213,88 +216,99 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flexShrink: 0,
   },
+  // ✅ FIX: Sirf French home tab ke liye — font thoda chhota taaki "Accueil" pura aaye
+  labelFrench: {
+    fontSize: 13,
+    letterSpacing: -0.3,
+  },
   tabInnerHomeActive: {
-    marginLeft: width * 0.07, // Balanced positioning
+    marginLeft: width * 0.07,
     marginRight: 0,
-     marginTop: -height * 0.012,
-   
+    marginTop: -height * 0.012,
+  },
+  // ✅ FIX: French home — marginLeft thoda adjust, gap kam, sab fit
+  tabInnerHomeActiveFrench: {
+    marginLeft: width * 0.045,
+    marginRight: 0,
+    marginTop: -height * 0.012,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   tabInnerHeart: {
-    marginLeft: width * 0.23,  
+    marginLeft: width * 0.23,
     marginRight: width * 0.027,
-     marginTop: -height * 0.005, 
+    marginTop: -height * 0.005,
   },
- tabInnerHeartActive: {
-  marginLeft: width * 0.022,
-  marginRight: width * 0.054,
-  flexDirection: 'row',     
-  flexWrap: 'nowrap',       
-  alignItems: 'center',     
-},
+  tabInnerHeartActive: {
+    marginLeft: width * 0.022,
+    marginRight: width * 0.054,
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    alignItems: 'center',
+  },
   tabInnerChat: {
-    marginLeft: width * 0.108,  
-   
+    marginLeft: width * 0.108,
   },
   tabInnerChatActive: {
     marginLeft: 0,
-    marginRight: width * 0.10,  
-    flexDirection: 'row',   
-    flexWrap: 'nowrap',      
-    alignItems: 'center',    
+    marginRight: width * 0.10,
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    alignItems: 'center',
   },
   tabInnerChatInactive: {
-    marginLeft: width * 0.19, 
-    marginRight: width * 0.014,  
+    marginLeft: width * 0.19,
+    marginRight: width * 0.014,
     justifyContent: 'center',
-     marginTop: -height * 0.005,
+    marginTop: -height * 0.005,
   },
-
   tabInnerChatWhenLikeActive: {
-  marginLeft: width * 0.16,  
-  marginRight: width * 0.068,
-  marginTop: -height * 0.0001,
-},
-tabInnerProfileWhenChatActive: {
-  marginLeft: width * 0.025, 
-  marginRight: 0,
-  justifyContent: 'center',
-},
-tabInnerProfileWhenLikeActive: {
-  marginLeft: width * 0.035,  
-  marginRight: 0,
-  justifyContent: 'center',
-},
+    marginLeft: width * 0.16,
+    marginRight: width * 0.068,
+    marginTop: -height * 0.0001,
+  },
+  tabInnerProfileWhenChatActive: {
+    marginLeft: width * 0.025,
+    marginRight: 0,
+    justifyContent: 'center',
+  },
+  tabInnerProfileWhenLikeActive: {
+    marginLeft: width * 0.035,
+    marginRight: 0,
+    justifyContent: 'center',
+  },
   tabInnerHomeInactive: {
     marginLeft: 0,
-    marginRight: width * 0.076, 
+    marginRight: width * 0.076,
   },
   tabInnerHeartWhenChatActive: {
-    marginLeft: width * 0.025, 
-    marginRight: width * 0.189,  
+    marginLeft: width * 0.025,
+    marginRight: width * 0.189,
   },
   tabInnerProfileActive: {
-    marginLeft: -width * 0.122,  
-    marginRight: width * 0.054,  
+    marginLeft: -width * 0.122,
+    marginRight: width * 0.054,
     justifyContent: 'flex-start',
-     gap: 8,
-       flexWrap: 'nowrap', 
+    gap: 8,
+    flexWrap: 'nowrap',
   },
   tabInnerProfileInactive: {
-    marginLeft: width * 0.009,  
+    marginLeft: width * 0.009,
     marginRight: 0,
     justifyContent: 'center',
   },
   tabInnerHomeWhenProfileActive: {
     marginLeft: 0,
-    marginRight: width * 0.081, 
+    marginRight: width * 0.081,
   },
   tabInnerHeartWhenProfileActive: {
-   marginLeft: width * 0.014,
-    marginRight: width * 0.189,  
+    marginLeft: width * 0.014,
+    marginRight: width * 0.189,
   },
   tabInnerChatWhenProfileActive: {
-  marginLeft: width * 0.029,
-    marginRight: width * 0.324,  
+    marginLeft: width * 0.029,
+    marginRight: width * 0.324,
   },
   inactiveIconContainer: {
     backgroundColor: '#FFFFFF',

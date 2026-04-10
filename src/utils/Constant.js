@@ -1,11 +1,11 @@
-   const devUrl = 'https://api.fitandmeet.com/';
+    const devUrl = 'https://api.fitandmeet.com/';
 
 //  const devUrl = 'http://10.0.2.2:5000/';  // Android Emulator (Backend runs on port 5000)
-  //  const devUrl = 'http://192.168.1.7:5000/';  // Real Device
+    // const devUrl = 'http://192.168.1.3:5000/';  // Real Device
 
-// Fallback URLs for different environments
+
 // const prodUrl = 'https://api.fitandmeet.com/';
-const emulatorUrl = 'http://10.0.2.2:5000/';
+// const emulatorUrl = 'http://10.0.2.2:5000/';
 
 
 let apiUrl;
