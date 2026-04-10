@@ -295,6 +295,7 @@ const Home = ({ navigation, route }) => {
     }
   };
 
+  // eslint-disable-next-line react/no-unstable-nested-components
   const ProfileCard = ({ profile }) => (
     <View style={styles.cardContainer}>
       <TouchableOpacity
@@ -374,7 +375,7 @@ const Home = ({ navigation, route }) => {
         />
       </TouchableOpacity>
 
-      <View style={styles.layoutImageContainer}>
+      <LinearGradient   colors={['transparent', 'rgba(0,0,0,0.8)', 'rgba(0,0,0,0.8)']} style={styles.layoutImageContainer}>
         <View style={styles.layoutImageWrapper}>
           <Image
             source={require('../../Assets/images/layout.png')}
@@ -384,10 +385,9 @@ const Home = ({ navigation, route }) => {
             onLoad={() => console.log('Image loaded successfully')}
           />
         </View>
-      </View>
+      </LinearGradient>
 
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)']}
+      <View
         style={styles.bottomOverlay}>
         <View style={styles.bottomInfo}>
           <View style={styles.gymSectionHorizontal}>
@@ -454,7 +454,7 @@ const Home = ({ navigation, route }) => {
             )}
           </View>
         </View>
-      </LinearGradient>
+      </View>
     </View>
   );
 
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     width: width - 40,
-    height: height - 200, // Slightly smaller to allow peek of next card
+    height: height - 220, // Slightly smaller to allow peek of next card
     position: 'relative',
     marginHorizontal: 20,
     borderRadius: 20,
@@ -772,7 +772,7 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 20,
     paddingBottom: 40,
-    paddingTop: 60,
+    // paddingTop: 60,
     zIndex: 10,
   },
   bottomInfo: {

@@ -388,7 +388,7 @@ const ChatRoom = ({ navigation, route }) => {
         pending: true,
       };
 
-      setMessages(prevMessages => [tempMessage, ...prevMessages]);
+      // setMessages(prevMessages => [tempMessage, ...prevMessages]);
       setInputText('');
 
       try {

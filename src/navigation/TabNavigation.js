@@ -60,8 +60,8 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
                       state.index === 3 ? width * 0.015 : 0,
         }
       ]}
-      resizeMode="contain"
-      imageStyle={{height: '100%'}}>
+      resizeMode="stretch"
+      imageStyle={styles.tabBarImage}>
 
       <Animated.View
         style={[
@@ -179,6 +179,10 @@ export const TabNav = () => {
 };
 
 const styles = StyleSheet.create({
+  tabBarImage: {
+    width: '100%',
+    height: '100%',
+  },
   tabBar: {
     flexDirection: 'row',
     height: 80,
