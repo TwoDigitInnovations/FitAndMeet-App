@@ -1,4 +1,4 @@
-package com.fitandmeet.app
+package com.fitandmeet.fit
 
 import android.app.Application
 import com.facebook.react.PackageList

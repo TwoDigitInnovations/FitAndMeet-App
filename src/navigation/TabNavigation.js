@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Animated,
   Dimensions,
@@ -8,27 +8,27 @@ import {
   View,
   ImageBackground,
 } from 'react-native';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {useTranslation} from 'react-i18next';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useTranslation } from 'react-i18next';
 import Home from '../screens/app/Home';
 import Discover from '../screens/app/Discover';
 import Settings from '../screens/app/Settings';
 import ChatList from '../screens/app/ChatList';
-import {Home as HomeIcon, Heart, MessageCircle, User} from 'lucide-react-native';
+import { Home as HomeIcon, Heart, MessageCircle, User } from 'lucide-react-native';
 
 const Tab = createBottomTabNavigator();
-const {width, height} = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-const CustomTabBar = ({state, descriptors, navigation}) => {
-  const {t, i18n} = useTranslation();
+const CustomTabBar = ({ state, descriptors, navigation }) => {
+  const { t, i18n } = useTranslation();
   const animatedValue = useRef(new Animated.Value(0)).current;
   const isFrench = i18n.language === 'fr';
 
   const tabs = [
-    {icon: HomeIcon, label: t('navigation.home')},
-    {icon: Heart, label: t('navigation.like')},
-    {icon: MessageCircle, label: t('navigation.chat')},
-    {icon: User, label: t('navigation.profile')},
+    { icon: HomeIcon, label: t('navigation.home') },
+    { icon: Heart, label: t('navigation.like') },
+    { icon: MessageCircle, label: t('navigation.chat') },
+    { icon: User, label: t('navigation.profile') },
   ];
 
   useEffect(() => {
@@ -47,17 +47,17 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
       key={state.index}
       source={
         state.index === 1 ? require('../Assets/images/like.png') :
-        state.index === 2 ? require('../Assets/images/chat.png') :
-        state.index === 3 ? require('../Assets/images/profile.png') :
-        require('../Assets/images/home1.png')
+          state.index === 2 ? require('../Assets/images/chat.png') :
+            state.index === 3 ? require('../Assets/images/profile.png') :
+              require('../Assets/images/home1.png')
       }
       style={[
         styles.tabBar,
         {
           bottom: height * 0.015,
           marginLeft: state.index === 0 || state.index === 1 ? width * 0.01 :
-                      state.index === 2 ? width * 0.015 :
-                      state.index === 3 ? width * 0.015 : 0,
+            state.index === 2 ? width * 0.015 :
+              state.index === 3 ? width * 0.015 : 0,
         }
       ]}
       resizeMode="stretch"
@@ -103,7 +103,7 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
         const isHomeTab = index === 0;
         const labelStyle = [
           styles.label,
-          
+
           isHomeTab && isFrench && isFocused && styles.labelFrench,
         ];
 
@@ -169,7 +169,7 @@ export const TabNav = () => {
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{headerShown: false}}>
+      screenOptions={{ headerShown: false }}>
       <Tab.Screen name="Home" component={Home} />
       <Tab.Screen name="Likes" component={Discover} />
       <Tab.Screen name="Messages" component={ChatList} />
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: width * 0.022,
+    paddingHorizontal: width * 0,
     marginLeft: width * 0.05,
   },
   label: {
