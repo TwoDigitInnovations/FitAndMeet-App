@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "FITANDMEET.app"
-               BlueprintName = "FITANDMEET"
-               ReferencedContainer = "container:FITANDMEET.xcodeproj">
+               BuildableName = "FitAndMeet.app"
+               BlueprintName = "FitAndMeet"
+               ReferencedContainer = "container:FitAndMeet.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "FITANDMEETTests.xctest"
-               BlueprintName = "FITANDMEETTests"
-               ReferencedContainer = "container:FITANDMEET.xcodeproj">
+               BuildableName = "FitAndMeetTests.xctest"
+               BlueprintName = "FitAndMeetTests"
+               ReferencedContainer = "container:FitAndMeet.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "FITANDMEET.app"
-            BlueprintName = "FITANDMEET"
-            ReferencedContainer = "container:FITANDMEET.xcodeproj">
+            BuildableName = "FitAndMeet.app"
+            BlueprintName = "FitAndMeet"
+            ReferencedContainer = "container:FitAndMeet.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "FITANDMEET.app"
-            BlueprintName = "FITANDMEET"
-            ReferencedContainer = "container:FITANDMEET.xcodeproj">
+            BuildableName = "FitAndMeet.app"
+            BlueprintName = "FitAndMeet"
+            ReferencedContainer = "container:FitAndMeet.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
